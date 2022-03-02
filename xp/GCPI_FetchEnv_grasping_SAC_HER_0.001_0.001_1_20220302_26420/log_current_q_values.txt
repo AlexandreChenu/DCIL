@@ -1,0 +1,1 @@
+tensor(0.5668, grad_fn=<MeanBackward0>)

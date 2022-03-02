@@ -1,0 +1,8 @@
+tensor(-5.7228)
+tensor(-6.1222)
+tensor(-6.1469)
+tensor(-6.1538)
+tensor(-6.1653)
+tensor(-6.2023)
+tensor(-6.1293)
+tensor(-6.1520)

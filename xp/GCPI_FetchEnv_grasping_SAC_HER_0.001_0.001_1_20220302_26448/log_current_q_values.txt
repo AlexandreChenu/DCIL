@@ -1,0 +1,8 @@
+tensor(0.5824, grad_fn=<MeanBackward0>)
+tensor(0.5895, grad_fn=<MeanBackward0>)
+tensor(0.5930, grad_fn=<MeanBackward0>)
+tensor(0.6704, grad_fn=<MeanBackward0>)
+tensor(0.7267, grad_fn=<MeanBackward0>)
+tensor(0.7277, grad_fn=<MeanBackward0>)
+tensor(0.7580, grad_fn=<MeanBackward0>)
+tensor(0.7580, grad_fn=<MeanBackward0>)

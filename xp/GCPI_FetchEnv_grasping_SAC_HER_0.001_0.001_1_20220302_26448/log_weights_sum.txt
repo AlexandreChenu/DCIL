@@ -1,0 +1,8 @@
+tensor(-23.1474, grad_fn=<SumBackward0>)
+tensor(-29.7900, grad_fn=<SumBackward0>)
+tensor(-30.6785, grad_fn=<SumBackward0>)
+tensor(-33.2967, grad_fn=<SumBackward0>)
+tensor(-33.0724, grad_fn=<SumBackward0>)
+tensor(-33.4420, grad_fn=<SumBackward0>)
+tensor(-34.1028, grad_fn=<SumBackward0>)
+tensor(-33.7353, grad_fn=<SumBackward0>)
