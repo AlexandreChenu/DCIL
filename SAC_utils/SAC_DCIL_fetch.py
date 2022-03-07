@@ -364,6 +364,15 @@ class SAC(OffPolicyAlgorithm):
             # using action from the replay buffer
             current_q_values = self.critic(replay_data.observations, replay_data.actions)
 
+            for i in range(current_q_values[0].shape[0]):
+                if abs(current_q_values[0][i] - target_q_values[i]) > 2.:
+                    print("\n diff values = ", abs(current_q_values[0][i] - target_q_values[i]))
+                    print("current value = ", current_q_values[0][i])
+                    print("target value = ",  target_q_values[i])
+                    print("transformed reward = ", transformed_rewards[i])
+                    print("dones = ", dones[i])
+                    print("reward = ", replay_data.rewards[i])
+
             ## check weights values
             L_weights = [self.critic.q_networks[0][0].weight.flatten(), self.critic.q_networks[0][2].weight.flatten(), self.critic.q_networks[0][4].weight.flatten()]
             cat_weights = th.cat((L_weights), axis=-1)
