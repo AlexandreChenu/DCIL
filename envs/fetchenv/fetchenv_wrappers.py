@@ -261,7 +261,7 @@ class ComplexFetchEnvGCPHERSB3(gym.Env):
 			info['traj'] = [self.traj_gripper, self.traj_object]
 
 			## time limit for SB3s
-			# info["TimeLimit.truncated"] = True
+			info["TimeLimit.truncated"] = True
 
 			return OrderedDict([
 					("observation", new_state.copy()),

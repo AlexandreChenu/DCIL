@@ -209,7 +209,7 @@ class DubinsMazeEnvGCPHERSB3(DubinsMazeEnv):
             info['traj'] = self.traj
 
             ## time limit for SB3s
-            # info["TimeLimit.truncated"] = True
+            info["TimeLimit.truncated"] = True
 
             return OrderedDict([
                     ("observation", new_state.copy()),

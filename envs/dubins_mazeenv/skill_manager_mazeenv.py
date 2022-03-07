@@ -29,7 +29,7 @@ class SkillsManager():
 		self.L_skills_results = [[] for _ in self.L_states]
 		self.L_overshoot_results = [[[]] for _ in self.L_states]
 
-		self.skill_window = 100
+		self.skill_window = 20
 		self.max_size_starting_state_set = 100
 
 		self.weighted_sampling = False

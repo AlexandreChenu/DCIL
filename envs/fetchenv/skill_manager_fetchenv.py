@@ -30,10 +30,9 @@ class SkillManager():
 		self.L_skills_results = [[] for _ in self.L_states]
 		self.L_overshoot_results = [[[]] for _ in self.L_states] ## a list of list of results per skill
 		self.L_skills_feasible = [False for _ in self.L_states]
-		self.L_skipping_feasible = [False for _ in self.L_states]
 		self.L_overshoot_feasible = [False for _ in self.L_states]
 
-		self.skill_window = 10
+		self.skill_window = 20
 		self.max_size_starting_state_set = 15
 
 		## skill sampling strategy (weighted or uniform)
@@ -42,20 +41,12 @@ class SkillManager():
 		self.delta_step = 1
 		self.dist_threshold = 0.08
 
-		self.min_dist_threshold = 0.05
-		self.max_dist_threshold = 0.15
-
 		self.nb_skills = len(self.L_states)-1
 
 		self.env_option = env_option
 
 		self.incl_extra_full_state = 1
 
-		self.subgoal_adaptation = False
-		self.skill_skipping = False
-
-		self.ratio_skipping = 0.7
-		self.skipping = False
 
 		self.L_goals = [self.project_to_goal_space(state) for state in self.L_states]
 
@@ -106,10 +97,6 @@ class SkillManager():
 		Monitor successes for a given skill
 		"""
 		self.L_skills_feasible[skill_indx] = True
-
-		if self.skipping:
-			self.L_skipping_feasible[skill_indx-1] = True
-
 		self.L_skills_results[skill_indx].append(1)
 
 		if len(self.L_skills_results[skill_indx]) > self.skill_window:
@@ -194,17 +181,10 @@ class SkillManager():
 		"""
 		Select a skill and return corresponding starting state, budget and goal
 		"""
-		self.skipping = False
 		skill_indx = self.sample_skill_indx()
 		## skill indx coorespond to a goal indx
 		self.indx_start = skill_indx - self.delta_step
 
-		if self.skill_skipping and skill_indx - 2*self.delta_step >= 0:
-			sample = random.random()
-			if sample >= self.ratio_skipping:
-				# print("\n\n SKIPPING \n\n")
-				self.indx_start =  skill_indx - 2*self.delta_step
-				self.skipping = True
 
 		self.indx_goal = skill_indx
 		length_skill = sum(self.L_budgets[self.indx_start:self.indx_goal])

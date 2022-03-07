@@ -96,7 +96,11 @@ class LogCallbackMazeEnv(BaseCallback):
 
             eval_traj, successful_traj, max_zone = eval_trajectory_mazeenv(env, eval_env, self.model, self.algo_type)
             self.eval_trajs.append(eval_traj)
-            self._visu_trajectories(env, eval_env, self.eval_trajs, self.trajs, self.success_trajs)
+            self._visu_trajectories(env, eval_env, [], self.trajs, [])
+
+            self.eval_trajs = []
+            self.trajs = []
+            self.success_trajs = []
 
         return True
 
@@ -229,7 +233,7 @@ class LogCallbackFetchEnv(BaseCallback):
             eval_skills = eval_skills_fetchenv(env, eval_env, self.model, self.algo_type)
 
             self._visu_trajectories(eval_env, eval_traj, eval_skills, self.trajs, self.success_trajs)
-            self._visu_value_function(env, eval_env)
+            # self._visu_value_function(env, eval_env)
 
             self.trajs = []
             self.success_trajs = []
@@ -270,14 +274,14 @@ class LogCallbackFetchEnv(BaseCallback):
             X_traj = [state[0] for state in traj]
             Y_traj = [state[1] for state in traj]
             Z_traj = [state[2] for state in traj]
-            ax.plot(X_traj, Y_traj, Z_traj, color = "pink", alpha = 0.35)
+            ax.plot(X_traj, Y_traj, Z_traj, color = "lightsteelblue", alpha = 0.35)
 
             traj = trajs[1]
             ## object traj
             X_traj = [state[0] for state in traj]
             Y_traj = [state[1] for state in traj]
             Z_traj = [state[2] for state in traj]
-            ax.plot(X_traj, Y_traj, Z_traj, color = "purple", alpha = 0.35)
+            ax.plot(X_traj, Y_traj, Z_traj, color = "steelblue", alpha = 0.35)
 
         for trajs in success_trajs:
             traj = trajs[0]
@@ -286,8 +290,8 @@ class LogCallbackFetchEnv(BaseCallback):
             Z_traj = [state[2] for state in traj]
             ax.plot(X_traj, Y_traj, Z_traj, color = "red", alpha = 0.35)
 
-        ## scatter plot current goal
-        ax.scatter(eval_env.goal[0], eval_env.goal[1], eval_env.goal[2], color = "red", alpha = 0.5 )
+        # ## scatter plot current goal
+        # ax.scatter(eval_env.goal[0], eval_env.goal[1], eval_env.goal[2], color = "red", alpha = 0.5 )
 
         ## scatter plot demo
         demo = eval_env.skill_manager.L_states
@@ -373,7 +377,7 @@ class LogCallbackFetchEnv(BaseCallback):
             line.set_3d_properties(p[:num, 2])
         return lines
 
-    def _visu_trajectories(self, eval_env, eval_traj, eval_skill):
+    def _make_animation(self, eval_env, eval_traj, eval_skill):
         """
         Plot demonstration, full evaluation trajectory, training trajectory.
         """
