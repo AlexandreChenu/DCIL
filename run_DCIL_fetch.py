@@ -170,7 +170,6 @@ def learn_DCIL(args, env, eval_env, path):
             n_runs = callback.callbacks[0].n_runs
 
             print("skills feasibility = ", env.envs[0].skill_manager.L_skills_feasible)
-            print("skipping feasibility = ", env.envs[0].skill_manager.L_skipping_feasible)
             print("overshoot feasibility = ", env.envs[0].skill_manager.L_overshoot_feasible)
 
             callback.callbacks[0].sum_W = 0
@@ -190,6 +189,8 @@ def learn_DCIL(args, env, eval_env, path):
                                                                         callback.callbacks[0].nb_rollout,
                                                                         False,
                                                                         video = args["video"])
+
+            print("full evaluation success = ", skills_successes)                           
             successfull_traj = skills_successes[-1]
             print("full evaluation success = ", successful_traj)
 
