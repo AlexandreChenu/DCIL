@@ -358,7 +358,7 @@ class SAC(OffPolicyAlgorithm):
                 next_q_values = next_q_values #- ent_coef * next_log_prob.reshape(-1, 1)
 
                 # td error + entropy term
-                target_q_values = (transformed_rewards*self.gamma + (1 - dones) * self.gamma * next_q_values).float()
+                target_q_values = (transformed_rewards + (1 - dones) * self.gamma * next_q_values).float()
 
             # Get current Q-values estimates for each critic network
             # using action from the replay buffer
