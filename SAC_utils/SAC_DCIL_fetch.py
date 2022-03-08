@@ -372,6 +372,7 @@ class SAC(OffPolicyAlgorithm):
                     print("transformed reward = ", transformed_rewards[i])
                     print("dones = ", dones[i])
                     print("reward = ", replay_data.rewards[i])
+                    print("i = ", i)
 
             ## check weights values
             L_weights = [self.critic.q_networks[0][0].weight.flatten(), self.critic.q_networks[0][2].weight.flatten(), self.critic.q_networks[0][4].weight.flatten()]
