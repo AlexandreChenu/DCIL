@@ -31,7 +31,7 @@ class DemoExtractor():
 
 		self.eps_state = eps_state ## threshold used for cleaning the trajectory and creating tasks
 
-		self.incl_extra_full_state = True
+		self.incl_extra_full_state = False
 
 		self.m_goals = None
 		self.std_goals = None
@@ -41,7 +41,22 @@ class DemoExtractor():
 		self.L_states, self.L_inner_states, self.L_actions = self.extract_from_demo()
 
 		self.L_states = self.L_states[1:]
+		## remove extra dimensions
+		self.L_states = [state[:268] for state in self.L_states]
+
 		self.L_inner_states = self.L_inner_states[:-1]
+		## remove extra dimensions
+		for i in range(len(self.L_inner_states)):
+			self.L_inner_states[i] = (self.L_inner_states[i][0],
+										self.L_inner_states[i][1],
+										self.L_inner_states[i][2],
+										self.L_inner_states[i][3][:268],
+										self.L_inner_states[i][4],
+										self.L_inner_states[i][5],
+										self.L_inner_states[i][6],
+										self.L_inner_states[i][7],
+										self.L_inner_states[i][8])
+
 		# self.L_states = self.L_states[40:70]
 		# self.L_inner_states = self.L_inner_states[40:70]
 		# self.L_actions = self.L_actions[40:70]

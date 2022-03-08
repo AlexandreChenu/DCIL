@@ -109,7 +109,8 @@ class ComplexFetchEnv:
         self.max_grip_score = max_grip_score
         self.ret_full_state = ret_full_state and not state_is_pixels
         #self.incl_extra_full_state = (incl_extra_full_state and not include_proprioception)
-        self.incl_extra_full_state = True
+        self.incl_extra_full_state = False
+        # self.incl_extra_full_state = False
         self.unwrapped = FakeUnwrapped(self)
         self.max_steps = max_steps
         self.spec = ComplexSpec('fetch')
@@ -658,6 +659,7 @@ class ComplexFetchEnv:
         if include_names:
             return copy.deepcopy(self.cached_full_state)
         res = self.cached_full_state.copy()
+        # print("\nres.size = ", res.size)
         if res.shape != self.observation_space.shape and not self.include_proprioception:
             old_res = res
             # print("old_res.size = ", old_res.size)
@@ -714,7 +716,7 @@ class ComplexFetchEnv:
             assert np.all(~np.isnan(state))
         if self.state_is_pixels and need_return:
             state = self._get_pixel_state()
-        return copy.deepcopy((state, reward, (done or self.n_steps > self.max_steps), info))
+        return copy.deepcopy((state, reward, done, info))
 
     DATA_TO_SAVE = [
         'qpos',
@@ -808,7 +810,7 @@ class MyComplexFetchEnv:
             model_file=model_file, nsubsteps=nsubsteps,
             min_grip_score=min_grip_score, max_grip_score=max_grip_score,
             #ret_full_state=False,
-            ret_full_state=True,
+            ret_full_state=False,
             target_single_shelf=target_single_shelf,
             combine_table_shelf_box=combine_table_shelf_box, ordered_grip=ordered_grip,
             target_location=target_location, timestep=timestep,
@@ -824,7 +826,8 @@ class MyComplexFetchEnv:
 
     def reset(self) -> np.ndarray:
         self.env.reset()
-        return self.env._get_state()
+        # return self.env._get_state()
+        return self.get_state()
 
     def get_restore(self):
         return (
@@ -833,14 +836,19 @@ class MyComplexFetchEnv:
 
     def restore(self, data):
         self.env.set_inner_state(data[0])
-        return self.env._get_state()
+        # return self.env._get_state()
+        return self.get_state()
 
     def step(self, action):
-        return self.env.step(action)
+        (_, reward, done, info) =  self.env.step(action)
+        return self.get_state(), reward, done, info
+
 
     def get_state(self):
         #return self.env._get_state()
-        return self.env._get_full_state()
+        state = self.env._get_full_state()
+        print("get state.size = ", state.size)
+        return state
 
     def render_with_known(self, known_positions, resolution, show=True, filename=None, combine_val=max,
                           get_val=lambda x: x.score, minmax=None):

@@ -45,7 +45,7 @@ class SkillManager():
 
 		self.env_option = env_option
 
-		self.incl_extra_full_state = 1
+		self.incl_extra_full_state = 0
 
 
 		self.L_goals = [self.project_to_goal_space(state) for state in self.L_states]

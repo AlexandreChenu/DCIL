@@ -41,7 +41,7 @@ class ComplexFetchEnvGCPHERSB3(gym.Env):
 
 		self.env_option = env_option
 
-		self.incl_extra_full_state = 1
+		self.incl_extra_full_state = 0
 
 		self.m_goals = m_goals
 		self.std_goals = std_goals
@@ -209,6 +209,8 @@ class ComplexFetchEnvGCPHERSB3(gym.Env):
 			self.traj_gripper.append(gripper_pos)
 			self.traj_object.append(object_pos)
 
+		print("new_state.shape = ", new_state.shape)
+
 		self.rollout_steps += 1
 
 		dst = self.compute_distance_in_goal_space(self.project_to_goal_space(new_state),  self.goal)
@@ -355,6 +357,8 @@ class ComplexFetchEnvGCPHERSB3(gym.Env):
 		In a fetchenv -> keep (x,y,z) coordinates of the gripper + 0,1 boolean
 		if the object is grasped or not.
 		"""
+
+		print("state.shape = ", state.shape)
 
 		gripper_pos = self.get_gripper_pos(state)
 		object_pos = self.get_object_pos(state)
