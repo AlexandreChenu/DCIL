@@ -58,7 +58,7 @@ from evaluate.fetchenv.evaluate_fetchenv import eval_trajectory_fetchenv
 from callbacks.callbacks import LogCallbackFetchEnv
 
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
-# from SAC_utils.vec_normalize import VecNormalize
+# from SAC_utils.vec_normalize_fetch import VecNormalize
 
 
 from stable_baselines3.common.vec_env.dummy_vec_env import DummyVecEnv
@@ -190,12 +190,17 @@ def learn_DCIL(args, env, eval_env, path):
                                                                         False,
                                                                         video = args["video"])
 
-            print("full evaluation success = ", skills_successes)                           
+            print("full evaluation success = ", skills_successes)
             successfull_traj = skills_successes[-1]
             print("full evaluation success = ", successful_traj)
 
             total_reward = sum(rewards)
             print("total_reward = ", total_reward)
+
+            # print("model._vec_normalize_env = ", model._vec_normalize_env.obs_rms["observation"].mean[:10])
+
+            with open(path+"vec_normalize_env.pkl","wb") as f:
+                pickle.dump(model._vec_normalize_env, f)
 
 
             f_nb_skill_succeeded.write(str(sum([int(skill_success) for skill_success in skills_successes])) + "\n")
@@ -356,6 +361,7 @@ if __name__ == '__main__':
     args["max_episode_length"] = max(env.skill_manager.L_budgets)
     # print("max_episode_length = ", args["max_episode_length"])
     env = DummyVecEnv([lambda: env])
+    # env = VecNormalize(env, env_args["env_option"], norm_obs=True, norm_reward=False, clip_obs=np.inf)
     env = VecNormalize(env, norm_obs=True, norm_reward=False, clip_obs=np.inf)
     env = VecMonitor(env)
     # env = VecNormalize(env, norm_obs=True, norm_reward=False)
