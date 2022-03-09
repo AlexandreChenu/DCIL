@@ -199,8 +199,8 @@ def learn_DCIL(args, env, eval_env, path):
 
             # print("model._vec_normalize_env = ", model._vec_normalize_env.obs_rms["observation"].mean[:10])
 
-            # with open(path+"/vec_normalize_env.pkl","wb") as f:
-            #     pickle.dump(model._vec_normalize_env, f)
+            with open(path+"/vec_normalize_env.pkl","wb") as f:
+                pickle.dump(model._vec_normalize_env, f)
 
 
             f_nb_skill_succeeded.write(str(sum([int(skill_success) for skill_success in skills_successes])) + "\n")
@@ -313,7 +313,7 @@ if __name__ == '__main__':
     args["do_overshoot"] = bool(int(parsed_args.overshoot_bool))
     args["eps_optimizer"] = float(parsed_args.eps_optimizer)
     args["video"] = False
-    args["total_timesteps"] = 400000 #600000
+    args["total_timesteps"] = 25000 #600000
     args["lr"] = float(parsed_args.l)
 
     if "DDPG" in args["RL_algo"] or "SAC" in args["RL_algo"] or "TD3" in args["RL_algo"]:
