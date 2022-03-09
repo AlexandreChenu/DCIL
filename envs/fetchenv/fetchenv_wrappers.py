@@ -209,7 +209,7 @@ class ComplexFetchEnvGCPHERSB3(gym.Env):
 			self.traj_gripper.append(gripper_pos)
 			self.traj_object.append(object_pos)
 
-		print("new_state.shape = ", new_state.shape)
+		#print("new_state.shape = ", new_state.shape)
 
 		self.rollout_steps += 1
 
@@ -358,7 +358,7 @@ class ComplexFetchEnvGCPHERSB3(gym.Env):
 		if the object is grasped or not.
 		"""
 
-		print("state.shape = ", state.shape)
+		#print("state.shape = ", state.shape)
 
 		gripper_pos = self.get_gripper_pos(state)
 		object_pos = self.get_object_pos(state)

@@ -98,7 +98,7 @@ class SAC(OffPolicyAlgorithm):
         # L_steps,
         learning_rate: Union[float, Schedule] = 3e-4,
         buffer_size: int = 1000000,  # 1e6
-        learning_starts: int = 100,
+        learning_starts: int = 1500,
         batch_size: int = 256,
         tau: float = 0.005, #0.001, #0.005,
         gamma: float = 0.99,
@@ -118,7 +118,7 @@ class SAC(OffPolicyAlgorithm):
         tensorboard_log: Optional[str] = None,
         create_eval_env: bool = False,
         policy_kwargs: Dict[str, Any] = None,
-        warmup_duration: int = 100, #200000,
+        warmup_duration: int = 100,
         verbose: int = 0,
         seed: Optional[int] = None,
         make_logs = False,
@@ -173,7 +173,7 @@ class SAC(OffPolicyAlgorithm):
         ## params for reward bonus
         self.eps_tolerance = 0.03 ## for relabelling close to actual goals
         self.add_bonus_reward = bonus_reward_bool
-        self.warmup_duration = warmup_duration ## number of training steps before adding the bonus
+        self.warmup_duration = learning_starts ## number of training steps before adding the bonus
         self.alpha_bonus = alpha_bonus
         self.max_reward = self.env.envs[0].max_reward
 

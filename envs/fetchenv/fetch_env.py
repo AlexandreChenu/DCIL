@@ -847,7 +847,7 @@ class MyComplexFetchEnv:
     def get_state(self):
         #return self.env._get_state()
         state = self.env._get_full_state()
-        print("get state.size = ", state.size)
+        #print("get state.size = ", state.size)
         return state
 
     def render_with_known(self, known_positions, resolution, show=True, filename=None, combine_val=max,
