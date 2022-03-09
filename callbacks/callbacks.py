@@ -296,13 +296,13 @@ class LogCallbackFetchEnv(BaseCallback):
         ## scatter plot demo
         demo = eval_env.skill_manager.L_states
 
-        #for state in demo: ## differentiate states w/ grasping and states w/o
-
-            #grasping_bool = eval_env.check_grasping(state)
-            #if grasping_bool:
-                #ax.scatter(eval_env.project_to_goal_space(state)[0], eval_env.project_to_goal_space(state)[1], eval_env.project_to_goal_space(state)[2], color = "saddlebrown", alpha = 0.8)
-            #else:
-                #ax.scatter(eval_env.project_to_goal_space(state)[0], eval_env.project_to_goal_space(state)[1], eval_env.project_to_goal_space(state)[2], color = "blue", alpha = 0.8)
+        # for state in demo: ## differentiate states w/ grasping and states w/o
+        #
+        #     grasping_bool = eval_env.check_grasping(state)
+        #     if grasping_bool:
+        #         ax.scatter(eval_env.project_to_goal_space(state)[0], eval_env.project_to_goal_space(state)[1], eval_env.project_to_goal_space(state)[2], color = "saddlebrown", alpha = 0.8)
+        #     else:
+        #         ax.scatter(eval_env.project_to_goal_space(state)[0], eval_env.project_to_goal_space(state)[1], eval_env.project_to_goal_space(state)[2], color = "blue", alpha = 0.8)
 
         self._visu_success_zones(eval_env, ax)
 
