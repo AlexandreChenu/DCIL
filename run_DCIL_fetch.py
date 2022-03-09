@@ -199,8 +199,8 @@ def learn_DCIL(args, env, eval_env, path):
 
             # print("model._vec_normalize_env = ", model._vec_normalize_env.obs_rms["observation"].mean[:10])
 
-            with open(path+"vec_normalize_env.pkl","wb") as f:
-                pickle.dump(model._vec_normalize_env, f)
+            # with open(path+"/vec_normalize_env.pkl","wb") as f:
+            #     pickle.dump(model._vec_normalize_env, f)
 
 
             f_nb_skill_succeeded.write(str(sum([int(skill_success) for skill_success in skills_successes])) + "\n")
@@ -301,7 +301,8 @@ if __name__ == '__main__':
 
     args["RL_algo"] = str(parsed_args.algo)
     args["env_name"] = str(parsed_args.env)
-    args["demo_directory"] = str(parsed_args.demo_path)
+    args["demo_directory"] = str(parsed_args.demo_path) + "demo_set/"
+    args["vec_norm_directory"] = str(parsed_args.demo_path) + "vec_norm_env_set/"
     args["demo_indx"] = int(parsed_args.x)
 
     args["demo_filename"] = args["demo_directory"] + str(args["demo_indx"]) + ".demo"
@@ -363,8 +364,23 @@ if __name__ == '__main__':
     env = DummyVecEnv([lambda: env])
     # env = VecNormalize(env, env_args["env_option"], norm_obs=True, norm_reward=False, clip_obs=np.inf)
     env = VecNormalize(env, norm_obs=True, norm_reward=False, clip_obs=np.inf)
+
+    ## fix mean and std
+    with open(args["vec_norm_directory"]+"/vec_normalize_env_5.pkl","rb") as f:
+        default_vec_normalize_env = pickle.load(f)
+
+    env.obs_rms["observation"].mean = default_vec_normalize_env.obs_rms["observation"].mean
+    env.obs_rms["observation"].var = default_vec_normalize_env.obs_rms["observation"].var
+    env.obs_rms["achieved_goal"].mean = default_vec_normalize_env.obs_rms["achieved_goal"].mean
+    env.obs_rms["achieved_goal"].var = default_vec_normalize_env.obs_rms["achieved_goal"].var
+    env.obs_rms["desired_goal"].mean = default_vec_normalize_env.obs_rms["desired_goal"].mean
+    env.obs_rms["desired_goal"].var = default_vec_normalize_env.obs_rms["desired_goal"].var
+    env.training = False
+
     env = VecMonitor(env)
     # env = VecNormalize(env, norm_obs=True, norm_reward=False)
+
+
 
     ## create eval environment
     eval_env = demo_extractor.get_env()
