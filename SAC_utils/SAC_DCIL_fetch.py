@@ -29,6 +29,7 @@ from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.her.her_replay_buffer import HerReplayBuffer
 
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
+# from SAC_utils.vec_normalize_fetch import VecNormalize
 
 import copy
 
@@ -98,7 +99,7 @@ class SAC(OffPolicyAlgorithm):
         # L_steps,
         learning_rate: Union[float, Schedule] = 3e-4,
         buffer_size: int = 1000000,  # 1e6
-        learning_starts: int = 100,
+        learning_starts: int = 1000,
         batch_size: int = 256,
         tau: float = 0.005, #0.001, #0.005,
         gamma: float = 0.99,
@@ -176,6 +177,10 @@ class SAC(OffPolicyAlgorithm):
         self.warmup_duration = warmup_duration ## number of training steps before adding the bonus
         self.alpha_bonus = alpha_bonus
         self.max_reward = self.env.envs[0].max_reward
+
+        ## extract _vec_normalize_env
+        # self._vec_normalize_env = self.env
+        # print("self._vec_normalize_env = ", self._vec_normalize_env)
 
         ## log for critic divergence analysis
         self.log_losses_freq = 100
@@ -311,7 +316,7 @@ class SAC(OffPolicyAlgorithm):
                         overshoot_goal.append([0])
 
 
-                transformed_rewards = self._transform_rewards(replay_data,  desired_goals, next_desired_goals, her_indices, overshoot_goal)
+                transformed_rewards = self._transform_rewards(replay_data,  infos, desired_goals, next_desired_goals, her_indices, overshoot_goal)
                 transformed_rewards = transformed_rewards.detach()
 
                 assert len(infos) == len(next_ep_final_transitions_infos)
@@ -364,14 +369,14 @@ class SAC(OffPolicyAlgorithm):
             # using action from the replay buffer
             current_q_values = self.critic(replay_data.observations, replay_data.actions)
 
-            for i in range(current_q_values[0].shape[0]):
-                if abs(current_q_values[0][i] - target_q_values[i]) > 2.:
-                    print("\n diff values = ", abs(current_q_values[0][i] - target_q_values[i]))
-                    print("current value = ", current_q_values[0][i])
-                    print("target value = ",  target_q_values[i])
-                    print("transformed reward = ", transformed_rewards[i])
-                    print("dones = ", dones[i])
-                    print("reward = ", replay_data.rewards[i])
+            # for i in range(current_q_values[0].shape[0]):
+            #     if abs(current_q_values[0][i] - target_q_values[i]) > 2.:
+            #         print("\n diff values = ", abs(current_q_values[0][i] - target_q_values[i]))
+            #         print("current value = ", current_q_values[0][i])
+            #         print("target value = ",  target_q_values[i])
+            #         print("transformed reward = ", transformed_rewards[i])
+            #         print("dones = ", dones[i])
+            #         print("reward = ", replay_data.rewards[i])
 
             ## check weights values
             L_weights = [self.critic.q_networks[0][0].weight.flatten(), self.critic.q_networks[0][2].weight.flatten(), self.critic.q_networks[0][4].weight.flatten()]
@@ -439,12 +444,14 @@ class SAC(OffPolicyAlgorithm):
 
 
 
-    def _transform_rewards(self, replay_data, true_desired_goals, shift_desired_goals, her_indices, overshoot_goal):
+    def _transform_rewards(self, replay_data, infos, true_desired_goals, shift_desired_goals, her_indices, overshoot_goal):
 
         rewards = copy.deepcopy(replay_data.rewards)
 
         next_observations = copy.deepcopy(replay_data.next_observations) ## includes n-step observation
 
+        # print("next observation = ", replay_data.next_observations["observation"][0])
+        # print("achieved_goal = ", replay_data.next_observations["achieved_goal"][0])
         ## shift desired goal to compute reward bonus
         next_observations_shift_desired_goal = copy.deepcopy(replay_data.next_observations)
         next_observations_shift_desired_goal["observation"] = next_observations_shift_desired_goal["observation"].cpu().numpy()
@@ -464,6 +471,19 @@ class SAC(OffPolicyAlgorithm):
         next_values = th.cat(self.critic_target.forward(next_observations_shift_desired_goal, next_actions), dim=1)
         next_values = th.min(next_values, dim=1, keepdim=True)[0].detach()
 
+        # update chaining bonus reward if larger than current value
+        chaining_bonus_reward = []
+        # print("\nnext_values.shape = ", next_values.shape)
+        # print("next_values[:10] = ", next_values[:10])
+
+        for i in range(len(infos)):
+            if next_values[i] > infos[i][0]["chaining_bonus_reward"]:
+                infos[i][0]["chaining_bonus_reward"] = next_values[i]
+            chaining_bonus_reward.append(list(infos[i][0]["chaining_bonus_reward"].numpy()))
+        t_chaining_bonus_reward = th.FloatTensor(chaining_bonus_reward)
+        # print("t_chaining_bonus_reward.shape = ", t_chaining_bonus_reward.shape)
+        # print("t_chaining_bonus_reward[:10] = ", t_chaining_bonus_reward[:10])
+
         # Compute reward mask -> only success can receive bonus reward
         assert (rewards <= self.max_reward).all()
         success_mask = (rewards == self.max_reward).int() ## includes n-step returns
@@ -480,7 +500,8 @@ class SAC(OffPolicyAlgorithm):
 
         # Compute reward bonus by successive application of reward and total dist masks
         # reward_bonus = next_values * success_mask.float() * th.from_numpy(relabelling_mask).float().to(self.device) * th.from_numpy(goal_mask).float().to(self.device)
-        reward_bonus = next_values * success_mask.float() * relabelling_mask.to(self.device) * th.from_numpy(goal_mask).float().to(self.device)
+        # reward_bonus = next_values * success_mask.float() * relabelling_mask.to(self.device) * th.from_numpy(goal_mask).float().to(self.device)
+        reward_bonus = t_chaining_bonus_reward * success_mask.float() * relabelling_mask.to(self.device) * th.from_numpy(goal_mask).float().to(self.device)
 
         return rewards + self.gamma*reward_bonus.float()
 

@@ -209,8 +209,6 @@ class ComplexFetchEnvGCPHERSB3(gym.Env):
 			self.traj_gripper.append(gripper_pos)
 			self.traj_object.append(object_pos)
 
-		print("new_state.shape = ", new_state.shape)
-
 		self.rollout_steps += 1
 
 		dst = self.compute_distance_in_goal_space(self.project_to_goal_space(new_state),  self.goal)
@@ -218,6 +216,7 @@ class ComplexFetchEnvGCPHERSB3(gym.Env):
 
 		info['goal_indx'] = copy.deepcopy(self.skill_manager.indx_goal)
 		info['goal'] = copy.deepcopy(self.goal)
+		info['chaining_bonus_reward'] = torch.FloatTensor([0.])
 
 		if info['target_reached']: # achieved goal
 
@@ -357,8 +356,6 @@ class ComplexFetchEnvGCPHERSB3(gym.Env):
 		In a fetchenv -> keep (x,y,z) coordinates of the gripper + 0,1 boolean
 		if the object is grasped or not.
 		"""
-
-		print("state.shape = ", state.shape)
 
 		gripper_pos = self.get_gripper_pos(state)
 		object_pos = self.get_object_pos(state)
