@@ -256,6 +256,8 @@ def learn_DCIL(args, env, eval_env, path):
     model.f_critic_losses = None
     model.f_actor_losses.close()
     model.f_actor_losses = None
+    model.f_critic_errors.close()
+    model.f_critic_errors = None
 
 
     ## save model

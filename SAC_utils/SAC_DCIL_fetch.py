@@ -199,6 +199,13 @@ class SAC(OffPolicyAlgorithm):
             self.f_critic_losses = open(path + "/critic_losses.txt", "w")
             self.f_actor_losses = open(path + "/actor_losses.txt", "w")
 
+            self.relabel_success_error = 0
+            self.relabel_bs_error = 0
+            self.success_error = 0
+            self.bs_error = 0
+
+            self.f_critic_errors = open(path + "/critic_errors.txt", "w")
+
         if _init_setup_model:
             self._setup_model()
 
@@ -379,6 +386,21 @@ class SAC(OffPolicyAlgorithm):
                     print("reward = ", replay_data.rewards[i])
                     print("i = ", i)
 
+                    ## relabelling
+                    if i < int(self.replay_buffer.her_ratio*self.batch_size):
+                        if dones[i] == 0.:
+                            self.relabel_bs_error+= 1
+                        else:
+                            self.relabel_success_error+=1
+                    ## no relabelling
+                    else :
+                        if dones[i] == 0.:
+                            self.bs_error+= 1
+                        else:
+                            self.success_error+=1
+
+
+
             ## check weights values
             L_weights = [self.critic.q_networks[0][0].weight.flatten(), self.critic.q_networks[0][2].weight.flatten(), self.critic.q_networks[0][4].weight.flatten()]
             cat_weights = th.cat((L_weights), axis=-1)
@@ -418,7 +440,7 @@ class SAC(OffPolicyAlgorithm):
 
         self._n_updates += gradient_steps
 
-        if self.train_iteration % self.log_losses_freq == 0:
+        if self.train_iteration % self.log_losses_freq == 0 and self.make_logs:
             self.f_log_next_q_values.write(str(next_q_values.mean()) + "\n")
             self.f_log_next_q_values.flush()
             # print("target_q_values[0] = ", target_q_values[0])
@@ -434,6 +456,11 @@ class SAC(OffPolicyAlgorithm):
             self.f_actor_losses.flush()
             self.f_weights_sum.write(str(sum_weights) + "\n")
             self.f_weights_sum.flush()
+            self.f_critic_errors.write(str(self.relabel_bs_error) + " " +
+                                    str(self.relabel_success_error) + " " +
+                                    str(self.bs_error) + " " +
+                                    str(self.success_error) + "\n")
+            self.f_critic_errors.flush()
 
         self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
         self.logger.record("train/ent_coef", np.mean(ent_coefs))
