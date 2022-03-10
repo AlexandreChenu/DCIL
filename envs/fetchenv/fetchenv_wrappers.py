@@ -21,7 +21,10 @@ from collections import OrderedDict
 import torch
 
 import  pdb
-
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+else:
+    device = torch.device("cpu")
 
 class ComplexFetchEnvGCPHERSB3(gym.Env):
 
@@ -216,7 +219,7 @@ class ComplexFetchEnvGCPHERSB3(gym.Env):
 
 		info['goal_indx'] = copy.deepcopy(self.skill_manager.indx_goal)
 		info['goal'] = copy.deepcopy(self.goal)
-		info['chaining_bonus_reward'] = torch.FloatTensor([0.])
+		info['chaining_bonus_reward'] = torch.FloatTensor([0.]).to(device)
 
 		if info['target_reached']: # achieved goal
 

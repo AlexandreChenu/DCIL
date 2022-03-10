@@ -480,8 +480,8 @@ class SAC(OffPolicyAlgorithm):
         for i in range(len(infos)):
             if next_values[i] > infos[i][0]["chaining_bonus_reward"]:
                 infos[i][0]["chaining_bonus_reward"] = next_values[i]
-            chaining_bonus_reward.append(list(infos[i][0]["chaining_bonus_reward"].numpy()))
-        t_chaining_bonus_reward = th.FloatTensor(chaining_bonus_reward)
+            chaining_bonus_reward.append(list(infos[i][0]["chaining_bonus_reward"].cpu().numpy()))
+        t_chaining_bonus_reward = th.FloatTensor(chaining_bonus_reward).to(self.device)
         # print("t_chaining_bonus_reward.shape = ", t_chaining_bonus_reward.shape)
         # print("t_chaining_bonus_reward[:10] = ", t_chaining_bonus_reward[:10])
 
