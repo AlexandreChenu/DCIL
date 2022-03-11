@@ -367,7 +367,7 @@ class SAC(OffPolicyAlgorithm):
                 next_q_values, _ = th.min(next_q_values, dim=1, keepdim=True)
 
                 # add entropy term
-                next_q_values = next_q_values #- ent_coef * next_log_prob.reshape(-1, 1)
+                next_q_values = next_q_values - ent_coef * next_log_prob.reshape(-1, 1)
 
                 # td error + entropy term
                 target_q_values = (transformed_rewards + (1 - dones) * self.gamma * next_q_values).float()
@@ -377,14 +377,14 @@ class SAC(OffPolicyAlgorithm):
             current_q_values = self.critic(replay_data.observations, replay_data.actions)
 
             for i in range(current_q_values[0].shape[0]):
-                if abs(current_q_values[0][i] - target_q_values[i]) > 2.:
-                    print("\n diff values = ", abs(current_q_values[0][i] - target_q_values[i]))
-                    print("current value = ", current_q_values[0][i])
-                    print("target value = ",  target_q_values[i])
-                    print("transformed reward = ", transformed_rewards[i])
-                    print("dones = ", dones[i])
-                    print("reward = ", replay_data.rewards[i])
-                    print("i = ", i)
+                if abs(current_q_values[0][i] - target_q_values[i]) > 1.:
+                    #print("\n diff values = ", abs(current_q_values[0][i] - target_q_values[i]))
+                    #print("current value = ", current_q_values[0][i])
+                    #print("target value = ",  target_q_values[i])
+                    #print("transformed reward = ", transformed_rewards[i])
+                    #print("dones = ", dones[i])
+                    #print("reward = ", replay_data.rewards[i])
+                    #print("i = ", i)
 
                     ## relabelling
                     if i < int(self.replay_buffer.her_ratio*self.batch_size):

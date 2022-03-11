@@ -315,7 +315,7 @@ if __name__ == '__main__':
     args["do_overshoot"] = bool(int(parsed_args.overshoot_bool))
     args["eps_optimizer"] = float(parsed_args.eps_optimizer)
     args["video"] = False
-    args["total_timesteps"] = 150000 #600000
+    args["total_timesteps"] = 50000 #600000
     args["lr"] = float(parsed_args.l)
 
     if "DDPG" in args["RL_algo"] or "SAC" in args["RL_algo"] or "TD3" in args["RL_algo"]:
