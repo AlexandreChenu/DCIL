@@ -91,7 +91,7 @@ def learn_DCIL(args, env, eval_env, path):
                                         online_sampling=online_sampling,
                                         max_episode_length=max_episode_length,
                                         ),
-                                        # ent_coef="auto_0.1"
+                                        ent_coef=args["alpha_ent"],
                                         policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300], optimizer_kwargs={"eps":args["eps_optimizer"]}),#net_arch=[256, 256, 256]),
                                         #policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300], optimizer_class=torch.optim.RMSprop, optimizer_kwargs=dict(eps=args["eps_optimizer"])),
                                         verbose=1,
@@ -117,6 +117,7 @@ def learn_DCIL(args, env, eval_env, path):
     f_sr_skills = open(path + "/sr_skills.txt", "w")
     f_ratio = open(path + "/ratio.txt", "w")
     f_nb_skill_succeeded = open(path + "/nb_skill_succeeded.txt", "w")
+    f_nb_skills_feasible = open(path + "/nb_skills_feasible.txt", "w")
 
     max_rollout_collection = 200
     last_episode_num = 0
@@ -171,6 +172,9 @@ def learn_DCIL(args, env, eval_env, path):
 
             print("skills feasibility = ", env.envs[0].skill_manager.L_skills_feasible)
             print("overshoot feasibility = ", env.envs[0].skill_manager.L_overshoot_feasible)
+
+            nb_skills_feasible = sum([int(skill_feasible) for skill_feasible in env.envs[0].skill_manager.L_skills_feasible])
+            f_nb_skills_feasible.write(str(nb_skills_feasible) + "\n")
 
             callback.callbacks[0].sum_W = 0
             callback.callbacks[0].n_runs = 0
@@ -271,6 +275,7 @@ def learn_DCIL(args, env, eval_env, path):
     f_RAM_memory.close()
     f_memory_percent.close()
     f_nb_skill_succeeded.close()
+    f_nb_skills_feasible.close()
 
     total_nb_timesteps = model.num_timesteps
     callback.on_training_end()
@@ -288,6 +293,7 @@ if __name__ == '__main__':
     parser.add_argument('--bonus_bool', help='add bonus reward')
     parser.add_argument('--overshoot_bool', help='overshoot if success yes(1) no(0)')
     parser.add_argument('--eps_optimizer', help='epsilon for adam optimizer')
+    parser.add_argument('--alpha_ent', help='temperature coefficient for entropy regularization')
     parser.add_argument('-l', help='learning rate')
     parser.add_argument('-x', help='demo indx')
 
@@ -314,6 +320,7 @@ if __name__ == '__main__':
     args["bonus_reward_bool"] = bool(int(parsed_args.bonus_bool))
     args["do_overshoot"] = bool(int(parsed_args.overshoot_bool))
     args["eps_optimizer"] = float(parsed_args.eps_optimizer)
+    args["alpha_ent"] = float(parsed_args.alpha_ent)
     args["video"] = False
     args["total_timesteps"] = 50000 #600000
     args["lr"] = float(parsed_args.l)
@@ -329,7 +336,7 @@ if __name__ == '__main__':
     dt_string = '_%s_%s' % (datetime.now().strftime('%Y%m%d'), str(os.getpid()))
 
     cur_path = os.getcwd()
-    dir_path = cur_path + "/xp/DCIL_" + args["env_name"] + "_" + args["RL_algo"] + "_" + str(args["lr"]) + "_" + str(args["eps_optimizer"]) + "_" + str(args["demo_indx"]) + dt_string
+    dir_path = cur_path + "/xp/DCIL_" + args["env_name"] + "_" + args["RL_algo"] + "_" + str(args["lr"]) + "_" + str(args["alpha_ent"]) + "_" + str(args["demo_indx"]) + dt_string
     try:
         os.mkdir(dir_path)
     except OSError:
