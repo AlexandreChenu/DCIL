@@ -117,7 +117,7 @@ class ComplexFetchEnvGCPHERSB3(gym.Env):
 		self.overshoot = False
 		self.do_overshoot = do_overshoot
 
-		self.max_reward = 1.
+		self.max_reward = 10.
 
 
 	def compute_distance_in_goal_space(self, in_goal1, in_goal2):

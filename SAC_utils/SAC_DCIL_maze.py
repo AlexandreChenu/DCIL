@@ -342,7 +342,7 @@ class SAC(OffPolicyAlgorithm):
                 next_q_values, _ = th.min(next_q_values, dim=1, keepdim=True)
 
                 # add entropy term
-                next_q_values = next_q_values #- ent_coef * next_log_prob.reshape(-1, 1)
+                next_q_values = next_q_values - ent_coef * next_log_prob.reshape(-1, 1)
 
                 # add discounted factor
                 # td error + entropy term

@@ -87,7 +87,7 @@ class DubinsMazeEnvGCPHERSB3(DubinsMazeEnv):
         self.buffer_transitions = []
 
         self.frame_skip = 2
-        self.max_reward = 1.
+        self.max_reward = 2.
         self.width_success = 0.1
         self.total_steps = 0
 
