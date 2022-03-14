@@ -60,6 +60,8 @@ from callbacks.callbacks import LogCallbackFetchEnv
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
 # from SAC_utils.vec_normalize_fetch import VecNormalize
 
+from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
+
 
 from stable_baselines3.common.vec_env.dummy_vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env.vec_monitor import VecMonitor
@@ -81,6 +83,10 @@ def learn_DCIL(args, env, eval_env, path):
         max_episode_length = args["max_episode_length"]
         ##### Warning: should it be fixed or can it be variable
 
+        # Add action noise for "more i.i.d" transitions?
+        n_actions = env.action_space.shape[-1]
+        action_noise = NormalActionNoise(mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions))
+
         model = SAC("MultiInputPolicy", env,
                                         learning_rate = args["lr"],
                                         replay_buffer_class=HerReplayBuffer,
@@ -91,6 +97,7 @@ def learn_DCIL(args, env, eval_env, path):
                                         online_sampling=online_sampling,
                                         max_episode_length=max_episode_length,
                                         ),
+                                        action_noise = action_noise,
                                         ent_coef=args["alpha_ent"],
                                         policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300], optimizer_kwargs={"eps":args["eps_optimizer"]}),#net_arch=[256, 256, 256]),
                                         #policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300], optimizer_class=torch.optim.RMSprop, optimizer_kwargs=dict(eps=args["eps_optimizer"])),
