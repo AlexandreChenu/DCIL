@@ -110,7 +110,7 @@ class SAC(OffPolicyAlgorithm):
         replay_buffer_kwargs: Optional[Dict[str, Any]] = None,
         optimize_memory_usage: bool = False,
         # ent_coef: Union[str, float] = "auto",
-        ent_coef: Union[str, float] = 0.002,
+        ent_coef: Union[str, float] = 0.001,
         target_update_interval: int = 1,
         target_entropy: Union[str, float] = "auto",
         use_sde: bool = False,

@@ -52,6 +52,7 @@ from stable_baselines3.common.buffers import DictRolloutBuffer
 from stable_baselines3.common.logger import configure
 
 from SAC_utils.SAC_DCIL_fetch import SAC
+from tqc import *
 
 from demo_extractor.demo_extractor_fetch import DemoExtractor
 from evaluate.fetchenv.evaluate_fetchenv import eval_trajectory_fetchenv
@@ -106,6 +107,44 @@ def learn_DCIL(args, env, eval_env, path):
                                         make_logs = True,
                                         path = path,
                                         bonus_reward_bool = args["bonus_reward_bool"],
+                                        device= device)
+
+        # set up logger for tensorboard (access tensorboard with cd /tmp/ && tensorboard --logdir sb3_log/)
+        tmp_path = "/tmp/sb3_log/"
+        new_logger = configure(tmp_path, ["stdout", "csv", "tensorboard"])
+        model.set_logger(new_logger)
+
+    if args["RL_algo"] == "TQC_HER":
+        # Available strategies (cf paper): future, final, episode
+        goal_selection_strategy = 'future' # equivalent to GoalSelectionStrategy.FUTURE
+        # If True the HER transitions will get sampled online
+        online_sampling = True
+
+        # Time limit for the episodes
+        max_episode_length = args["max_episode_length"]
+        ##### Warning: should it be fixed or can it be variable
+
+        # Add action noise for "more i.i.d" transitions?
+        n_actions = env.action_space.shape[-1]
+        action_noise = NormalActionNoise(mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions))
+
+        model = TQC("MultiInputPolicy", env,
+                                        learning_rate = args["lr"],
+                                        gamma = 0.95,
+                                        batch_size = 1024,
+                                        learning_starts = 1000,
+                                        replay_buffer_class=HerReplayBuffer,
+                                        # Parameters for HER
+                                        replay_buffer_kwargs=dict(
+                                        n_sampled_goal=4,
+                                        goal_selection_strategy=goal_selection_strategy,
+                                        online_sampling=online_sampling,
+                                        max_episode_length=max_episode_length,
+                                        ),
+                                        ent_coef=args["alpha_ent"],
+                                        policy_kwargs = dict(log_std_init=-3, net_arch=[512, 512, 512]),
+                                        #policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300], optimizer_class=torch.optim.RMSprop, optimizer_kwargs=dict(eps=args["eps_optimizer"])),
+                                        verbose=1,
                                         device= device)
 
         # set up logger for tensorboard (access tensorboard with cd /tmp/ && tensorboard --logdir sb3_log/)
@@ -332,7 +371,7 @@ if __name__ == '__main__':
     args["total_timesteps"] = 250000 #600000
     args["lr"] = float(parsed_args.l)
 
-    if "DDPG" in args["RL_algo"] or "SAC" in args["RL_algo"] or "TD3" in args["RL_algo"]:
+    if "DDPG" in args["RL_algo"] or "SAC" in args["RL_algo"] or "TD3" in args["RL_algo"] or "TQC" in args["RL_algo"]:
         args["algo_type"] = "OffPolicyAlgorithm"
     else:
         args["algo_type"] = "OnPolicyAlgorithm"
