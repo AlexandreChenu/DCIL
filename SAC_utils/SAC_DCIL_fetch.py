@@ -166,6 +166,7 @@ class SAC(OffPolicyAlgorithm):
         self.ent_coef = ent_coef
         self.target_update_interval = target_update_interval
         self.ent_coef_optimizer = None
+        self.add_ent_reg_critic = False
 
         self.update_freq = 100
         self.train_iteration = 0
@@ -367,7 +368,7 @@ class SAC(OffPolicyAlgorithm):
                 next_q_values, _ = th.min(next_q_values, dim=1, keepdim=True)
 
                 # add entropy term
-                next_q_values = next_q_values - ent_coef * next_log_prob.reshape(-1, 1)
+                next_q_values = next_q_values - self.add_ent_reg_critic * ent_coef * next_log_prob.reshape(-1, 1)
 
                 # td error + entropy term
                 target_q_values = (transformed_rewards + (1 - dones) * self.gamma * next_q_values).float()
@@ -500,15 +501,15 @@ class SAC(OffPolicyAlgorithm):
         next_values = th.min(next_values, dim=1, keepdim=True)[0].detach()
 
         # update chaining bonus reward if larger than current value
-        chaining_bonus_reward = []
+        #chaining_bonus_reward = []
         # print("\nnext_values.shape = ", next_values.shape)
         # print("next_values[:10] = ", next_values[:10])
 
-        for i in range(len(infos)):
-            if next_values[i] > infos[i][0]["chaining_bonus_reward"]:
-                infos[i][0]["chaining_bonus_reward"] = next_values[i]
-            chaining_bonus_reward.append(list(infos[i][0]["chaining_bonus_reward"].cpu().numpy()))
-        t_chaining_bonus_reward = th.FloatTensor(chaining_bonus_reward).to(self.device)
+        #for i in range(len(infos)):
+            #if next_values[i] > infos[i][0]["chaining_bonus_reward"]:
+                #infos[i][0]["chaining_bonus_reward"] = next_values[i]
+            #chaining_bonus_reward.append(list(infos[i][0]["chaining_bonus_reward"].cpu().numpy()))
+        #t_chaining_bonus_reward = th.FloatTensor(chaining_bonus_reward).to(self.device)
         # print("t_chaining_bonus_reward.shape = ", t_chaining_bonus_reward.shape)
         # print("t_chaining_bonus_reward[:10] = ", t_chaining_bonus_reward[:10])
 
@@ -528,10 +529,10 @@ class SAC(OffPolicyAlgorithm):
 
         # Compute reward bonus by successive application of reward and total dist masks
         # reward_bonus = next_values * success_mask.float() * th.from_numpy(relabelling_mask).float().to(self.device) * th.from_numpy(goal_mask).float().to(self.device)
-        # reward_bonus = next_values * success_mask.float() * relabelling_mask.to(self.device) * th.from_numpy(goal_mask).float().to(self.device)
-        reward_bonus = t_chaining_bonus_reward * success_mask.float() * relabelling_mask.to(self.device) * th.from_numpy(goal_mask).float().to(self.device)
+        reward_bonus = next_values * success_mask.float() * relabelling_mask.to(self.device) * th.from_numpy(goal_mask).float().to(self.device)
+        #reward_bonus = t_chaining_bonus_reward * success_mask.float() * relabelling_mask.to(self.device) * th.from_numpy(goal_mask).float().to(self.device)
 
-        return rewards + self.gamma*reward_bonus.float()
+        return rewards + reward_bonus.float()
 
 
     def _sample_buffer(self,
