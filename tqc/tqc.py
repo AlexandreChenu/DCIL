@@ -137,6 +137,7 @@ class TQC(OffPolicyAlgorithm):
         self.top_quantiles_to_drop_per_net = top_quantiles_to_drop_per_net
 
         self.max_reward = self.env.envs[0].max_reward
+        self.add_bonus_reward = True
 
         if _init_setup_model:
             self._setup_model()
@@ -213,6 +214,36 @@ class TQC(OffPolicyAlgorithm):
             if self.use_sde:
                 self.actor.reset_noise()
 
+            ## Transform rewards only if warm-up phase for Q-value done.
+            if self.add_bonus_reward:# and self.all_skills_feasible:
+                ## value-based bonus reward
+                overshoot_goal = []
+                desired_goals = []
+                next_desired_goals = []
+                for info in infos:
+                    desired_goals.append(list(self.env.envs[0].project_to_goal_space(self.env.envs[0].skill_manager.get_goal_state(info[0]["goal_indx"]))))
+
+                    next_goal_indx = info[0]["goal_indx"]+1
+                    if next_goal_indx < len(self.env.envs[0].skill_manager.L_states):
+                        next_desired_goals.append(list(self.env.envs[0].project_to_goal_space(self.env.envs[0].skill_manager.get_goal_state(next_goal_indx))))
+                    else:
+                        next_desired_goals.append(list(self.env.envs[0].project_to_goal_space(self.env.envs[0].skill_manager.get_goal_state(next_goal_indx-1))))
+
+                    if info[0]["goal_indx"] < len(self.env.envs[0].skill_manager.L_states)-1: ## add bonus to subgoals only (not final goal)
+                        overshoot_goal.append([1])
+                    else:
+                        overshoot_goal.append([0])
+
+                # print("replay_data.rewards[-10:] = ", replay_data.rewards[-10:])
+                transformed_rewards = self._transform_rewards(replay_data, batch_size, infos, desired_goals, next_desired_goals, her_indices, overshoot_goal)
+                transformed_rewards = transformed_rewards.detach()
+                # print("transformed_rewards[-10:] = ", transformed_rewards[-10:])
+
+                assert len(infos) == len(next_ep_final_transitions_infos)
+
+            else:
+                transformed_rewards = replay_data.rewards
+
             # Action by the current actor for the sampled state
             actions_pi, log_prob = self.actor.action_log_prob(replay_data.observations)
             log_prob = log_prob.reshape(-1, 1)
@@ -253,7 +284,9 @@ class TQC(OffPolicyAlgorithm):
                 # td error + entropy term
                 target_quantiles = next_quantiles - ent_coef * next_log_prob.reshape(-1, 1)
                 # target_quantiles = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_quantiles
-                target_quantiles = replay_data.rewards + (1 - dones) * self.gamma * target_quantiles
+                # target_quantiles = replay_data.rewards + (1 - dones) * self.gamma * target_quantiles
+                target_quantiles = transformed_rewards + (1 - dones) * self.gamma * target_quantiles
+                
                 # Make target_quantiles broadcastable to (batch_size, n_critics, n_target_quantiles).
                 target_quantiles.unsqueeze_(dim=1)
 
@@ -290,6 +323,58 @@ class TQC(OffPolicyAlgorithm):
         self.logger.record("train/critic_loss", np.mean(critic_losses))
         if len(ent_coef_losses) > 0:
             self.logger.record("train/ent_coef_loss", np.mean(ent_coef_losses))
+
+    def _transform_rewards(self, replay_data, batch_size, infos, true_desired_goals, shift_desired_goals, her_indices, overshoot_goal):
+
+        rewards = copy.deepcopy(replay_data.rewards)
+
+        next_observations = copy.deepcopy(replay_data.next_observations) ## includes n-step observation
+
+        ## shift desired goal to compute reward bonus
+        next_observations_shift_desired_goal = copy.deepcopy(replay_data.next_observations)
+        next_observations_shift_desired_goal["observation"] = next_observations_shift_desired_goal["observation"].cpu().numpy()
+        next_observations_shift_desired_goal["achieved_goal"] = next_observations_shift_desired_goal["achieved_goal"].cpu().numpy()
+        next_observations_shift_desired_goal["desired_goal"] = next_observations_shift_desired_goal["desired_goal"].cpu().numpy()
+        next_observations_shift_desired_goal = self._vec_normalize_env.unnormalize_obs(next_observations_shift_desired_goal)
+        next_observations_shift_desired_goal["desired_goal"][:] = np.array(shift_desired_goals)[:]
+        next_observations_shift_desired_goal = self._vec_normalize_env.normalize_obs(next_observations_shift_desired_goal)
+        next_observations_shift_desired_goal["observation"] = th.from_numpy(next_observations_shift_desired_goal["observation"]).to(self.device)
+        next_observations_shift_desired_goal["achieved_goal"] = th.from_numpy(next_observations_shift_desired_goal["achieved_goal"]).to(self.device)
+        next_observations_shift_desired_goal["desired_goal"] = th.from_numpy(next_observations_shift_desired_goal["desired_goal"]).to(self.device)
+
+        # Get next action using current policy
+        next_actions = self.actor._predict(next_observations_shift_desired_goal, deterministic=True)
+
+        # # Compute the next values from quantiles
+        next_quantiles = self.critic_target(next_observations_shift_desired_goal, next_actions)
+        # print("TR: next_quantiles.shape = ", next_quantiles.shape)
+
+        # Sort and drop top k quantiles to control overestimation.
+        n_target_quantiles = self.critic.quantiles_total - self.top_quantiles_to_drop_per_net * self.critic.n_critics
+        next_quantiles, _ = th.sort(next_quantiles.reshape(batch_size, -1))
+        next_quantiles = next_quantiles[:, :n_target_quantiles]
+        middle_quantile = int(n_target_quantiles/2)
+        next_values = next_quantiles[:,middle_quantile].detach().reshape(batch_size,-1)
+        # print("TR: next_values.shape = ", next_values.shape)
+
+        # Compute reward mask -> only success can receive bonus reward
+        assert (rewards <= self.max_reward).all()
+        success_mask = (rewards == self.max_reward).int() ## includes n-step returns
+
+        ## last goal should not look for overshoot success
+        goal_mask = np.array(overshoot_goal)
+
+        ## no bonus for relabelled transitions (except if relabelled desired goal close to actual desired goal?)
+        next_observations["observation"] = next_observations["observation"].cpu()
+        next_observations["achieved_goal"] = next_observations["achieved_goal"].cpu()
+        next_observations["desired_goal"] = next_observations["desired_goal"].cpu()
+        next_observations = self._vec_normalize_env.unnormalize_obs(next_observations)
+        relabelling_mask = (th.linalg.norm(next_observations["desired_goal"][:] - th.FloatTensor(true_desired_goals)[:], axis=1) < 0.01).float().reshape(rewards.shape)
+
+        # Compute reward bonus by successive application of reward and total dist masks
+        reward_bonus = next_values * success_mask.float() * relabelling_mask.to(self.device) * th.from_numpy(goal_mask).float().to(self.device)
+
+        return rewards + reward_bonus.float()
 
     def learn(
         self,
