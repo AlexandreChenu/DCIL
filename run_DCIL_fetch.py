@@ -98,7 +98,7 @@ def learn_DCIL(args, env, eval_env, path):
                                         online_sampling=online_sampling,
                                         max_episode_length=max_episode_length,
                                         ),
-                                        action_noise = action_noise,
+                                        #action_noise = action_noise,
                                         ent_coef=args["alpha_ent"],
                                         policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300], optimizer_kwargs={"eps":args["eps_optimizer"]}),#net_arch=[256, 256, 256]),
                                         #policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300], optimizer_class=torch.optim.RMSprop, optimizer_kwargs=dict(eps=args["eps_optimizer"])),
