@@ -387,7 +387,7 @@ if __name__ == '__main__':
     dt_string = '_%s_%s' % (datetime.now().strftime('%Y%m%d'), str(os.getpid()))
 
     cur_path = os.getcwd()
-    dir_path = cur_path + "/xp/DCIL_" + args["env_name"] + "_" + args["RL_algo"] + "_" + str(args["lr"]) + "_" + str(args["alpha_ent"]) + "_" + str(args["demo_indx"]) + dt_string
+    dir_path = cur_path + "/xp/DCIL_" + args["env_name"] + "_" + args["RL_algo"] + "_" + str(args["lr"]) + "_" + str(args["alpha_ent"]) + "_" + str(args["add_ent_reg"]) + "_" + str(args["demo_indx"]) + dt_string
     try:
         os.mkdir(dir_path)
     except OSError:
