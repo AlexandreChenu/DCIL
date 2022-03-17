@@ -259,18 +259,6 @@ class SAC(OffPolicyAlgorithm):
         if self.ent_coef_optimizer is not None:
             optimizers += [self.ent_coef_optimizer]
 
-        # Atomic skill feasibility:
-        #if not self.all_skills_feasible :
-            #print("check feasible ", self.all_skills_feasible)
-            #self.all_skills_feasible = all(skill_feasible for skill_feasible in self.env.envs[0].skill_manager.L_skills_feasible[1:])
-            #for g in self.critic.optimizer.param_groups:
-                #print("g['lr'] = ", g['lr'])
-            ## decrease lr to improve stability after adding exploratory bonus
-            #if self.all_skills_feasible:
-                #self.replay_buffer.n_sampled_goal = 1
-                #self.replay_buffer.her_ratio = 1 - (1.0 / (self.replay_buffer.n_sampled_goal + 1))
-
-
         # Update learning rate according to lr schedule
         self._update_learning_rate(optimizers)
 
@@ -295,9 +283,6 @@ class SAC(OffPolicyAlgorithm):
             assert (dones[:] <= 1).all()
             assert (dones[:] >= 0).all()
 
-            ## remove dones for timeouts
-            # extra_dones = (diff_reward_done > 0).int()
-            # replay_data.dones[:] = replay_data.dones[:] - extra_dones[:]
 
             # We need to sample because `log_std` may have changed between two gradient steps
             if self.use_sde:
@@ -380,13 +365,6 @@ class SAC(OffPolicyAlgorithm):
 
             for i in range(current_q_values[0].shape[0]):
                 if abs(current_q_values[0][i] - target_q_values[i]) > 1.:
-                    #print("\n diff values = ", abs(current_q_values[0][i] - target_q_values[i]))
-                    #print("current value = ", current_q_values[0][i])
-                    #print("target value = ",  target_q_values[i])
-                    #print("transformed reward = ", transformed_rewards[i])
-                    #print("dones = ", dones[i])
-                    #print("reward = ", replay_data.rewards[i])
-                    #print("i = ", i)
 
                     ## relabelling
                     if i < int(self.replay_buffer.her_ratio*self.batch_size):
@@ -422,8 +400,8 @@ class SAC(OffPolicyAlgorithm):
             # Compute actor loss
             # Alternative: actor_loss = th.mean(log_prob - qf1_pi)
             # Mean over all critic networks
-            #q_values_pi = th.cat(self.critic.forward(replay_data.observations, actions_pi), dim=1)
-            q_values_pi = th.cat(self.critic_target.forward(replay_data.observations, actions_pi), dim=1)
+            q_values_pi = th.cat(self.critic.forward(replay_data.observations, actions_pi), dim=1)
+            # q_values_pi = th.cat(self.critic_target.forward(replay_data.observations, actions_pi), dim=1)
             min_qf_pi, _ = th.min(q_values_pi, dim=1, keepdim=True)
             actor_loss = (ent_coef * log_prob - min_qf_pi).mean()
 
