@@ -96,6 +96,7 @@ class TQC(OffPolicyAlgorithm):
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
         add_bonus_reward = True,
+        add_ent_reg_critic = True,
         _init_setup_model: bool = True,
     ):
 
@@ -139,6 +140,7 @@ class TQC(OffPolicyAlgorithm):
 
         self.max_reward = self.env.envs[0].max_reward
         self.add_bonus_reward = add_bonus_reward
+        self.add_ent_reg_critic = add_ent_reg_critic
 
         if _init_setup_model:
             self._setup_model()
@@ -283,7 +285,7 @@ class TQC(OffPolicyAlgorithm):
                 next_quantiles = next_quantiles[:, :n_target_quantiles]
 
                 # td error + entropy term
-                target_quantiles = next_quantiles #- ent_coef * next_log_prob.reshape(-1, 1)
+                target_quantiles = next_quantiles - self.add_ent_reg_critic*(ent_coef * next_log_prob.reshape(-1, 1))
                 # target_quantiles = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_quantiles
                 # target_quantiles = replay_data.rewards + (1 - dones) * self.gamma * target_quantiles
                 target_quantiles = transformed_rewards + (1 - dones) * self.gamma * target_quantiles

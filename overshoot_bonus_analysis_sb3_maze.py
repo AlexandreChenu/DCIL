@@ -114,7 +114,8 @@ def learn_GGI(args, env, eval_env, path):
                                         #policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300], optimizer_class=torch.optim.RMSprop, optimizer_kwargs=dict(eps=args["eps_optimizer"])),
                                         verbose=1,
                                         device= device,
-                                        add_bonus_reward = args["bonus_reward_bool"])
+                                        add_bonus_reward = args["bonus_reward_bool"],
+                                        add_ent_reg_critic = args["add_ent_reg"])
 
     ## setup callback and learning
     callback = LogCallbackMazeEnv(path, args["algo_type"], eval_env)
@@ -127,7 +128,7 @@ def learn_GGI(args, env, eval_env, path):
     # f_m_r = open(path + "/m_r.txt", "w")
     # f_m_l = open(path + "/m_l.txt", "w")
     # f_ratio = open(path + "/ratio.txt", "w")
-    # f_nb_skill_succeeded = open(path + "/nb_skill_succeeded.txt", "w")
+    f_nb_chained_skills = open(path + "/nb_chained_skills.txt", "w")
 
     callback.on_training_start(locals(), globals())
 
@@ -182,13 +183,13 @@ def learn_GGI(args, env, eval_env, path):
 
             ## evaluate chaining of skills
             eval_traj, skills_successes, max_zone = eval_trajectory_mazeenv(env, eval_env, model, args["algo_type"])
-            print("full evaluation success = ", skills_successes)
+            print("skill-chaining = ", skills_successes)
 
             successful_traj = skills_successes[-1]
             print("full evaluation success = ", successful_traj)
 
             # f_ratio.write(str(ratio) + "\n")
-            # f_nb_skill_succeeded.write(str(sum([int(skill_success) for skill_success in skills_successes])) + "\n")
+            f_nb_chained_skills.write(str(sum([int(skill_success) for skill_success in skills_successes])) + "\n")
 
             rollout_collection_cnt = 0
 
@@ -205,7 +206,7 @@ def learn_GGI(args, env, eval_env, path):
                 model.train(batch_size=model.batch_size, gradient_steps=gradient_steps)
 
     # f_ratio.close()
-    # f_nb_skill_succeeded.close()
+    f_nb_chained_skills.close()
 
     total_nb_timesteps = model.num_timesteps
     callback.on_training_end()
@@ -247,11 +248,13 @@ def learn_GGI(args, env, eval_env, path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Argument for GCP imitation.')
 
-    parser.add_argument('-r', help='add bonus reward')
+    parser.add_argument('--add_bonus', help='add bonus reward')
+    parser.add_argument('--add_ent_reg', help='add entropy regularization for critic')
     parsed_args = parser.parse_args()
 
     args = {}
-    args["bonus_reward_bool"] = bool(int(parsed_args.r))
+    args["bonus_reward_bool"] = bool(int(parsed_args.add_bonus))
+    args["add_ent_reg"] = bool(int(parsed_args.add_ent_reg))
 
     args["eps_dist"] = 1.2
     args["success_dist"] = 0.2
