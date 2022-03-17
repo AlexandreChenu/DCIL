@@ -79,7 +79,7 @@ def learn_GGI(args, env, eval_env, path):
         warmup_duration=100,
         verbose=1, path=path, make_logs = True,
         bonus_reward_bool = args["bonus_reward_bool"],
-        add_ent_reg_critic = args["add_ent_reg"], 
+        add_ent_reg_critic = args["add_ent_reg"],
         alpha_bonus = 0.1,
         device= device)
 
@@ -119,7 +119,7 @@ def learn_GGI(args, env, eval_env, path):
                                         add_ent_reg_critic = args["add_ent_reg"])
 
     ## setup callback and learning
-    callback = LogCallbackMazeEnv(path, args["algo_type"], eval_env)
+    callback = LogCallbackMazeEnv(path, args["RL_algo"], args["algo_type"], eval_env)
     total_timesteps, callback = model._setup_learn(args["total_timesteps"],
                                                         eval_env, callback,
                                                         -1, 5, args["RL_algo"],
@@ -254,7 +254,6 @@ if __name__ == '__main__':
     parsed_args = parser.parse_args()
 
     args = {}
-    args["algo"] = str(parsed_args.algo)
     args["bonus_reward_bool"] = bool(int(parsed_args.add_bonus))
     args["add_ent_reg"] = bool(int(parsed_args.add_ent_reg))
 
@@ -264,7 +263,7 @@ if __name__ == '__main__':
     args["num_episodes"] = 100
     args["episode_timesteps"] = 200
     # args["RL_algo"] = "SAC_HER"
-    args["RL_algo"] = args["algo"]
+    args["RL_algo"] = str(parsed_args.algo)
     args["env_name"] = "DubinsMazeEnv"
     args["mazesize"] = "2"
     args["bc_reg_bool"] = False

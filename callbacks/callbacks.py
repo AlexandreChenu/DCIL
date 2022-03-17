@@ -48,7 +48,7 @@ class LogCallbackMazeEnv(BaseCallback):
     Callback for saving visual log in Maze environments
     """
 
-    def __init__(self, path, algo_type, env, verbose: int = 0):
+    def __init__(self, path, algo, algo_type, env, verbose: int = 0):
         super().__init__(verbose)
         self.trajs = []
         self.traj = []
@@ -58,6 +58,7 @@ class LogCallbackMazeEnv(BaseCallback):
         self.sum_W = 0
         self.n_runs = 0
         self.path = path
+        self.algo = algo
         self.algo_type = algo_type
 
         if self.algo_type == "OffPolicyAlgorithm":
@@ -215,10 +216,16 @@ class LogCallbackMazeEnv(BaseCallback):
             # q_values = self.model.critic(obs, action)
 
             # # Compute the next values from quantiles
-            next_values = self.model.critic_target(obs, action).mean(dim=2).mean(dim=1, keepdim=True)
+            if "SAC" in self.algo:
+                value = self.model.critic(obs, action)[0]
+            elif "TQC" in self.algo:
+                value = self.model.critic_target(obs, action).mean(dim=2).mean(dim=1, keepdim=True)
+            else:
+                value = None
+                print("Unknown RL algo")
 
             # print("q_values[0] = ", q_values[0])
-            values.append(next_values.detach().cpu().numpy()[0])
+            values.append(value.detach().cpu().numpy()[0])
 
         fig, ax = plt.subplots()
         plt.plot(list(s_theta), values,label="learned V(s,g')")
