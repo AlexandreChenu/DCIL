@@ -206,26 +206,19 @@ class LogCallbackMazeEnv(BaseCallback):
             obs = env.normalize_obs(obs)
             ####
 
-            obs["observation"] = torch.FloatTensor(obs["observation"])
-            obs["desired_goal"] = torch.FloatTensor(obs["desired_goal"])
-            obs["achieved_goal"] = torch.FloatTensor(obs["achieved_goal"])
+            obs["observation"] = torch.FloatTensor(obs["observation"]).to(device)
+            obs["desired_goal"] = torch.FloatTensor(obs["desired_goal"]).to(device)
+            obs["achieved_goal"] = torch.FloatTensor(obs["achieved_goal"]).to(device)
 
             action = self.model.actor._predict(obs, deterministic=True)
 
-            q_values = self.model.critic(obs, action)
+            # q_values = self.model.critic(obs, action)
 
             # # Compute the next values from quantiles
-            quantiles = self.model.critic_target(obs, action)
-
-            # Sort and drop top k quantiles to control overestimation.
-            n_target_quantiles = self.model.critic.quantiles_total - self.model.top_quantiles_to_drop_per_net * self.model.critic.n_critics
-            quantiles, _ = torch.sort(quantiles.reshape(1, -1))
-            quantiles = quantiles[:, :n_target_quantiles]
-            middle_quantile = int(n_target_quantiles/2)
-            next_values = quantiles[:,middle_quantile]
+            next_values = self.model.critic_target(obs, action).mean(dim=2).mean(dim=1, keepdim=True)
 
             # print("q_values[0] = ", q_values[0])
-            values.append(next_values.detach().numpy()[0])
+            values.append(next_values.detach().cpu().numpy()[0])
 
         fig, ax = plt.subplots()
         plt.plot(list(s_theta), values,label="learned V(s,g')")
