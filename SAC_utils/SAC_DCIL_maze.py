@@ -122,6 +122,7 @@ class SAC(OffPolicyAlgorithm):
         make_logs = False,
         path ="",
         bonus_reward_bool = True,
+        add_ent_reg_critic = True,
         alpha_bonus = 1.,
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
@@ -174,6 +175,7 @@ class SAC(OffPolicyAlgorithm):
         self.warmup_duration = warmup_duration ## number of training steps before adding the bonus
         self.alpha_bonus = alpha_bonus
         self.max_reward = self.env.envs[0].max_reward
+        self.add_ent_reg_critic = add_ent_reg_critic
 
         ## log for critic divergence analysis
         self.log_losses_freq = 100
@@ -342,7 +344,7 @@ class SAC(OffPolicyAlgorithm):
                 next_q_values, _ = th.min(next_q_values, dim=1, keepdim=True)
 
                 # add entropy term
-                next_q_values = next_q_values - ent_coef * next_log_prob.reshape(-1, 1)
+                next_q_values = next_q_values - self.add_ent_reg_critic * ent_coef * next_log_prob.reshape(-1, 1)
 
                 # add discounted factor
                 # td error + entropy term

@@ -79,6 +79,7 @@ def learn_GGI(args, env, eval_env, path):
         warmup_duration=100,
         verbose=1, path=path, make_logs = True,
         bonus_reward_bool = args["bonus_reward_bool"],
+        add_ent_reg_critic = args["add_ent_reg"], 
         alpha_bonus = 0.1,
         device= device)
 
