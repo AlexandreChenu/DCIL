@@ -247,12 +247,13 @@ def learn_GGI(args, env, eval_env, path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Argument for GCP imitation.')
-
+    parser.add_argument('--algo', help='RL algo')
     parser.add_argument('--add_bonus', help='add bonus reward')
     parser.add_argument('--add_ent_reg', help='add entropy regularization for critic')
     parsed_args = parser.parse_args()
 
     args = {}
+    args["algo"] = str(parsed_args.algo)
     args["bonus_reward_bool"] = bool(int(parsed_args.add_bonus))
     args["add_ent_reg"] = bool(int(parsed_args.add_ent_reg))
 
@@ -262,7 +263,7 @@ if __name__ == '__main__':
     args["num_episodes"] = 100
     args["episode_timesteps"] = 200
     # args["RL_algo"] = "SAC_HER"
-    args["RL_algo"] = "TQC_HER"
+    args["RL_algo"] = args["algo"]
     args["env_name"] = "DubinsMazeEnv"
     args["mazesize"] = "2"
     args["bc_reg_bool"] = False

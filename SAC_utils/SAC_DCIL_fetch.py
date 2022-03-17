@@ -260,15 +260,15 @@ class SAC(OffPolicyAlgorithm):
             optimizers += [self.ent_coef_optimizer]
 
         # Atomic skill feasibility:
-        if not self.all_skills_feasible :
+        #if not self.all_skills_feasible :
             #print("check feasible ", self.all_skills_feasible)
-            self.all_skills_feasible = all(skill_feasible for skill_feasible in self.env.envs[0].skill_manager.L_skills_feasible[1:])
+            #self.all_skills_feasible = all(skill_feasible for skill_feasible in self.env.envs[0].skill_manager.L_skills_feasible[1:])
             #for g in self.critic.optimizer.param_groups:
                 #print("g['lr'] = ", g['lr'])
             ## decrease lr to improve stability after adding exploratory bonus
-            if self.all_skills_feasible:
-                self.replay_buffer.n_sampled_goal = 1
-                self.replay_buffer.her_ratio = 1 - (1.0 / (self.replay_buffer.n_sampled_goal + 1))
+            #if self.all_skills_feasible:
+                #self.replay_buffer.n_sampled_goal = 1
+                #self.replay_buffer.her_ratio = 1 - (1.0 / (self.replay_buffer.n_sampled_goal + 1))
 
 
         # Update learning rate according to lr schedule
