@@ -97,7 +97,7 @@ class LogCallbackMazeEnv(BaseCallback):
             eval_traj, successful_traj, max_zone = eval_trajectory_mazeenv(env, eval_env, self.model, self.algo_type)
             self.eval_trajs.append(eval_traj)
             self._visu_trajectories(env, eval_env, [], self.trajs, [])
-
+            self._visu_V()
             self.eval_trajs = []
             self.trajs = []
             self.success_trajs = []
@@ -165,6 +165,80 @@ class LogCallbackMazeEnv(BaseCallback):
         plt.close(fig)
 
         return 0
+
+    def _visu_V(self) -> None:
+        ## retrieve env
+        eval_env = self.locals["eval_env"]
+        env = self.locals["env"]
+
+        ## Toy DubinsMaze
+        states = [eval_env.skill_manager.L_states[0], eval_env.skill_manager.L_states[1]]
+        goal_indxs = [1,2]
+        desired_goals = [eval_env.skill_manager.L_states[1], eval_env.skill_manager.L_states[2]]
+        orientation_ranges = [[-np.pi/2,np.pi/2], [0.,np.pi]]
+
+        for state, goal_indx, desired_goal, orientation_range in zip(states, goal_indxs, desired_goals, orientation_ranges):
+            self._visu_value_function_cst_speed(env, eval_env, state, goal_indx, desired_goal, orientation_range)
+        return
+
+    def _visu_value_function_cst_speed(self, env, eval_env, state, goal_indx, desired_goal, orientation_range):
+
+        # s_v = np.linspace(0.5,1.,100)
+        s_theta = np.linspace(orientation_range[0],orientation_range[1],100)
+        values = []
+
+        for theta in list(s_theta):
+            obs = eval_env._get_obs()
+            #print("action = ", action)
+            obs["observation"][0] = state[0]
+            obs["observation"][1] = state[1]
+            obs["observation"][2] = theta
+
+            obs["achieved_goal"][0] = state[0]
+            obs["achieved_goal"][1] = state[1]
+
+            obs["desired_goal"] = np.array([desired_goal[0],desired_goal[1]])
+
+            ### Normalization
+            obs["observation"] = np.array([obs["observation"]])
+            obs["desired_goal"] = np.array([obs["desired_goal"]])
+            obs["achieved_goal"] = np.array([obs["achieved_goal"]])
+            obs = env.normalize_obs(obs)
+            ####
+
+            obs["observation"] = torch.FloatTensor(obs["observation"])
+            obs["desired_goal"] = torch.FloatTensor(obs["desired_goal"])
+            obs["achieved_goal"] = torch.FloatTensor(obs["achieved_goal"])
+
+            action = self.model.actor._predict(obs, deterministic=True)
+
+            q_values = self.model.critic(obs, action)
+
+            # # Compute the next values from quantiles
+            quantiles = self.model.critic_target(obs, action)
+
+            # Sort and drop top k quantiles to control overestimation.
+            n_target_quantiles = self.model.critic.quantiles_total - self.model.top_quantiles_to_drop_per_net * self.model.critic.n_critics
+            quantiles, _ = torch.sort(quantiles.reshape(1, -1))
+            quantiles = quantiles[:, :n_target_quantiles]
+            middle_quantile = int(n_target_quantiles/2)
+            next_values = quantiles[:,middle_quantile]
+
+            # print("q_values[0] = ", q_values[0])
+            values.append(next_values.detach().numpy()[0])
+
+        fig, ax = plt.subplots()
+        plt.plot(list(s_theta), values,label="learned V(s,g')")
+        plt.plot()
+        plt.xlabel("theta")
+        plt.ylabel("value")
+        plt.legend()
+
+        plt.savefig(self.path + "/visu_values_" + str(goal_indx) + "_it_" + str(self.nb_rollout) + ".png")
+        #plt.show()
+        plt.close(fig)
+
+        return
 
 class LogCallbackFetchEnv(BaseCallback):
     """

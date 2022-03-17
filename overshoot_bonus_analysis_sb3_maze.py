@@ -34,6 +34,7 @@ from stable_baselines3.common.utils import safe_mean
 from stable_baselines3.common.buffers import DictRolloutBuffer
 
 from SAC_utils.SAC_DCIL_maze import SAC
+from tqc import *
 from demo_extractor.demo_extractor_maze import DemoExtractor
 from evaluate.dubinsmazeenv.evaluate_mazeenv import eval_trajectory_mazeenv
 from callbacks.callbacks import LogCallbackMazeEnv
@@ -80,6 +81,40 @@ def learn_GGI(args, env, eval_env, path):
         bonus_reward_bool = args["bonus_reward_bool"],
         alpha_bonus = 0.1,
         device= device)
+
+    if args["RL_algo"] == "TQC_HER":
+        # Available strategies (cf paper): future, final, episode
+        goal_selection_strategy = 'future' # equivalent to GoalSelectionStrategy.FUTURE
+        # If True the HER transitions will get sampled online
+        online_sampling = True
+
+        # Time limit for the episodes
+        max_episode_length = 50
+        ##### Warning: should it be fixed or can it be variable
+
+        # Add action noise for "more i.i.d" transitions?
+        # n_actions = env.action_space.shape[-1]
+        # action_noise = NormalActionNoise(mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions))
+
+        model = TQC("MultiInputPolicy", env,
+                                        learning_rate = 1e-3,
+                                        gamma = 0.95,
+                                        batch_size = 1024,
+                                        learning_starts = 100,
+                                        replay_buffer_class=HerReplayBuffer,
+                                        # Parameters for HER
+                                        replay_buffer_kwargs=dict(
+                                        n_sampled_goal=4,
+                                        goal_selection_strategy=goal_selection_strategy,
+                                        online_sampling=online_sampling,
+                                        max_episode_length=max_episode_length,
+                                        ),
+                                        ent_coef=0.1,
+                                        policy_kwargs = dict(log_std_init=-3, net_arch=[512, 512, 512]),
+                                        #policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300], optimizer_class=torch.optim.RMSprop, optimizer_kwargs=dict(eps=args["eps_optimizer"])),
+                                        verbose=1,
+                                        device= device,
+                                        add_bonus_reward = args["bonus_reward_bool"])
 
     ## setup callback and learning
     callback = LogCallbackMazeEnv(path, args["algo_type"], eval_env)
@@ -223,17 +258,18 @@ if __name__ == '__main__':
     args["success_ratio"] = 0.98
     args["num_episodes"] = 100
     args["episode_timesteps"] = 200
-    args["RL_algo"] = "SAC_HER"
+    # args["RL_algo"] = "SAC_HER"
+    args["RL_algo"] = "TQC_HER"
     args["env_name"] = "DubinsMazeEnv"
     args["mazesize"] = "2"
     args["bc_reg_bool"] = False
     args["do_overshoot"] =  True
     args["gamma"] = 0.99
     args["alpha"] = 0.1
-    args["total_timesteps"] = 35000
+    args["total_timesteps"] = 25000
 
 
-    if "DDPG" in args["RL_algo"] or "SAC" in args["RL_algo"] or "TD3" in args["RL_algo"]:
+    if "DDPG" in args["RL_algo"] or "SAC" in args["RL_algo"] or "TD3" in args["RL_algo"] or "TQC" in args["RL_algo"]:
         args["algo_type"] = "OffPolicyAlgorithm"
     else:
         args["algo_type"] = "OnPolicyAlgorithm"

@@ -95,6 +95,7 @@ class TQC(OffPolicyAlgorithm):
         verbose: int = 0,
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
+        add_bonus_reward = True,
         _init_setup_model: bool = True,
     ):
 
@@ -137,7 +138,7 @@ class TQC(OffPolicyAlgorithm):
         self.top_quantiles_to_drop_per_net = top_quantiles_to_drop_per_net
 
         self.max_reward = self.env.envs[0].max_reward
-        self.add_bonus_reward = True
+        self.add_bonus_reward = add_bonus_reward
 
         if _init_setup_model:
             self._setup_model()
@@ -286,7 +287,7 @@ class TQC(OffPolicyAlgorithm):
                 # target_quantiles = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_quantiles
                 # target_quantiles = replay_data.rewards + (1 - dones) * self.gamma * target_quantiles
                 target_quantiles = transformed_rewards + (1 - dones) * self.gamma * target_quantiles
-                
+
                 # Make target_quantiles broadcastable to (batch_size, n_critics, n_target_quantiles).
                 target_quantiles.unsqueeze_(dim=1)
 
@@ -327,6 +328,7 @@ class TQC(OffPolicyAlgorithm):
     def _transform_rewards(self, replay_data, batch_size, infos, true_desired_goals, shift_desired_goals, her_indices, overshoot_goal):
 
         rewards = copy.deepcopy(replay_data.rewards)
+        # print("rewards.shape = ", rewards.shape)
 
         next_observations = copy.deepcopy(replay_data.next_observations) ## includes n-step observation
 
@@ -346,16 +348,20 @@ class TQC(OffPolicyAlgorithm):
         next_actions = self.actor._predict(next_observations_shift_desired_goal, deterministic=True)
 
         # # Compute the next values from quantiles
-        next_quantiles = self.critic_target(next_observations_shift_desired_goal, next_actions)
+        # next_quantiles = self.critic_target(next_observations_shift_desired_goal, next_actions)
         # print("TR: next_quantiles.shape = ", next_quantiles.shape)
 
+        next_values = self.critic_target(next_observations_shift_desired_goal, next_actions).mean(dim=2).mean(dim=1, keepdim=True).detach()
+
         # Sort and drop top k quantiles to control overestimation.
-        n_target_quantiles = self.critic.quantiles_total - self.top_quantiles_to_drop_per_net * self.critic.n_critics
-        next_quantiles, _ = th.sort(next_quantiles.reshape(batch_size, -1))
-        next_quantiles = next_quantiles[:, :n_target_quantiles]
-        middle_quantile = int(n_target_quantiles/2)
-        next_values = next_quantiles[:,middle_quantile].detach().reshape(batch_size,-1)
+        # n_target_quantiles = self.critic.quantiles_total - self.top_quantiles_to_drop_per_net * self.critic.n_critics
+        # next_quantiles, _ = th.sort(next_quantiles.reshape(batch_size, -1))
+        # next_quantiles = next_quantiles[:, :n_target_quantiles]
+        # middle_quantile = int(n_target_quantiles/2)
+        # # next_values = next_quantiles[:,middle_quantile].detach().reshape(batch_size,-1)
+        # next_values = next_quantiles[:,n_target_quantiles-1].detach().reshape(batch_size,-1)
         # print("TR: next_values.shape = ", next_values.shape)
+        # print("next_values[-10:] = ", next_values[-10:])
 
         # Compute reward mask -> only success can receive bonus reward
         assert (rewards <= self.max_reward).all()
