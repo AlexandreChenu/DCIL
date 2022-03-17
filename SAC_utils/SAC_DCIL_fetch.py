@@ -126,6 +126,7 @@ class SAC(OffPolicyAlgorithm):
         path ="",
         bc_reg_bool = False,
         bonus_reward_bool = True,
+        add_ent_reg_critic = True,
         alpha_bonus = 1.,
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
@@ -166,7 +167,7 @@ class SAC(OffPolicyAlgorithm):
         self.ent_coef = ent_coef
         self.target_update_interval = target_update_interval
         self.ent_coef_optimizer = None
-        self.add_ent_reg_critic = False
+        self.add_ent_reg_critic = add_ent_reg_critic
 
         self.update_freq = 100
         self.train_iteration = 0

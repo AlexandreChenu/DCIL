@@ -107,6 +107,7 @@ def learn_DCIL(args, env, eval_env, path):
                                         make_logs = True,
                                         path = path,
                                         bonus_reward_bool = args["bonus_reward_bool"],
+                                        add_ent_reg_critic = args["add_ent_reg"],
                                         device= device)
 
         # set up logger for tensorboard (access tensorboard with cd /tmp/ && tensorboard --logdir sb3_log/)
@@ -145,7 +146,9 @@ def learn_DCIL(args, env, eval_env, path):
                                         policy_kwargs = dict(log_std_init=-3, net_arch=[512, 512, 512]),
                                         #policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300], optimizer_class=torch.optim.RMSprop, optimizer_kwargs=dict(eps=args["eps_optimizer"])),
                                         verbose=1,
-                                        device= device)
+                                        device= device,
+                                        add_bonus_reward = args["bonus_reward_bool"],
+                                        add_ent_reg_critic = args["add_ent_reg"])
 
         # set up logger for tensorboard (access tensorboard with cd /tmp/ && tensorboard --logdir sb3_log/)
         tmp_path = "/tmp/sb3_log/"
@@ -342,6 +345,7 @@ if __name__ == '__main__':
     parser.add_argument('--alpha_ent', help='temperature coefficient for entropy regularization')
     parser.add_argument('-l', help='learning rate')
     parser.add_argument('-x', help='demo indx')
+    parser.add_argument('--ent_reg_bool', help='add entropy regularization term for critic update')
 
 
     parsed_args = parser.parse_args()
@@ -370,6 +374,7 @@ if __name__ == '__main__':
     args["video"] = False
     args["total_timesteps"] = 250000 #600000
     args["lr"] = float(parsed_args.l)
+    args["add_ent_reg"] = bool(int(parsed_args.ent_reg_bool))
 
     if "DDPG" in args["RL_algo"] or "SAC" in args["RL_algo"] or "TD3" in args["RL_algo"] or "TQC" in args["RL_algo"]:
         args["algo_type"] = "OffPolicyAlgorithm"
