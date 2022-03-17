@@ -98,7 +98,7 @@ def learn_GGI(args, env, eval_env, path):
 
         model = TQC("MultiInputPolicy", env,
                                         learning_rate = 1e-3,
-                                        gamma = 0.95,
+                                        gamma = 0.99,
                                         batch_size = 1024,
                                         learning_starts = 100,
                                         replay_buffer_class=HerReplayBuffer,

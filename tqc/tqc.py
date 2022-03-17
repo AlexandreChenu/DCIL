@@ -283,7 +283,7 @@ class TQC(OffPolicyAlgorithm):
                 next_quantiles = next_quantiles[:, :n_target_quantiles]
 
                 # td error + entropy term
-                target_quantiles = next_quantiles - ent_coef * next_log_prob.reshape(-1, 1)
+                target_quantiles = next_quantiles #- ent_coef * next_log_prob.reshape(-1, 1)
                 # target_quantiles = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_quantiles
                 # target_quantiles = replay_data.rewards + (1 - dones) * self.gamma * target_quantiles
                 target_quantiles = transformed_rewards + (1 - dones) * self.gamma * target_quantiles
