@@ -62,27 +62,27 @@ def save_frames_as_video(frames, path, iteration):
 
     return
 
-def eval_trajectory_humanoidenv(env, eval_env, model, algo_type, path, nb_rollout, testing, video=False):
+def eval_trajectory_humanoid(env, eval_env, model, algo_type, path, nb_rollout, testing, video=False):
     """
-    Evaluate agent on the full trajectory (chaining of all tasks)
-    Iterate over tasks and wait for success of time step limit to shift to the next task.
-    Return successful eval boolean iff the last task has been achieved.
+    Evaluate agent on the full trajectory (chaining of all skills)
+    Iterate over skills and wait for success of time step limit to shift to the next skill.
+    Return successful eval boolean iff the last skill has been achieved.
     """
 
     eval_env.reset()
-    eval_env.reset_task_by_nb(1)
+    eval_env.reset_skill_by_nb(1)
 
     traj = [eval_env.env.get_state()]
 
     eval_env.testing = True
 
-    tasks_successes = []
+    skills_successes = []
 
     frames = []
 
-    while eval_env.tasks.indx_goal < eval_env.tasks.nb_tasks + 1:
+    while eval_env.skill_manager.indx_goal < eval_env.skill_manager.nb_skills + 1:
 
-        task_success = False
+        skill_success = False
 
         for i_step in range(0,eval_env.max_steps):
             if video:
@@ -110,21 +110,21 @@ def eval_trajectory_humanoidenv(env, eval_env, model, algo_type, path, nb_rollou
             traj.append(new_obs["observation"])
 
             if info['target_reached']:
-                task_success = True
+                skill_success = True
                 break
 
         ## change goal and max_steps
-        eval_env.advance_task()
+        eval_env.next_skill()
 
-        tasks_successes.append(task_success)
+        skills_successes.append(skill_success)
 
         if nb_rollout % 10000 == 0 or testing:
             if video:
                 save_frames_as_video(frames, path, nb_rollout)
 
-    return traj, tasks_successes[-1]
+    return traj, skills_successes
 
-def eval_tasks_humanoidenv(env, eval_env, model, algo_type):
+def eval_skills_humanoidenv(env, eval_env, model, algo_type):
 
     eval_env.reset()
 
@@ -132,9 +132,9 @@ def eval_tasks_humanoidenv(env, eval_env, model, algo_type):
 
     eval_env.testing = True
 
-    for i in range(1,eval_env.tasks.nb_tasks+1):
+    for i in range(1,eval_env.skill_manager.nb_skills+1):
 
-        eval_env.reset_task_by_nb(i)
+        eval_env.reset_skill_by_nb(i)
 
         traj = [copy.deepcopy(eval_env.env.get_state())]
 

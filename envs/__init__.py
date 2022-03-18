@@ -28,3 +28,15 @@ register(
     id='FetchEnvGCPHERSB3-v0',
     entry_point='envs.fetchenv.fetchenv_wrappers:ComplexFetchEnvGCPHERSB3',
 )
+
+## Humanoid environment from Mujoco
+print("REGISTERING HumanoidEnv-v0 & HumanoidEnvGCPHERSB3-v0")
+register(
+    id='HumanoidEnv-v0',
+    entry_point='envs.humanoid.humanoidenv:MyHumanoidEnv',
+)
+
+register(
+    id='HumanoidEnvGCPHERSB3-v0',
+    entry_point='envs.humanoid.humanoidenv_wrappers:HumanoidEnvGCPHERSB3',
+)

@@ -558,3 +558,161 @@ class LogCallbackFetchEnv(BaseCallback):
         self.values_logfile_agent.flush()
 
         return
+
+
+class LogCallbackHumanoidEnv(BaseCallback):
+    """
+    Callback for saving visual log in Humanoid environments
+    """
+
+    def __init__(self, path, algo_type, env, verbose: int = 0):
+        super().__init__(verbose)
+        self.trajs = []
+        self.traj = []
+        self.success_trajs = []
+        self.nb_rollout = 0
+        self.sum_W = 0
+        self.n_runs = 0
+        self.path = path
+        self.algo_type = algo_type
+
+        self.values_logfile_agent = open(self.path + "/values_logs_agent.txt", "w")
+
+        if self.algo_type == "OffPolicyAlgorithm":
+            self.freq_rollout_display = 1000
+            # self.freq_rollout_display = 100
+            self.freq_eval_adapted_traj = 50
+
+        else:
+            self.freq_rollout_display = 10
+
+        ## save videos?
+        self.video = False
+
+
+    def _on_step(self) -> bool:
+        # print("self.locals.keys() = ", self.locals.keys())
+
+        info = self.locals["infos"][0]
+        eval_env = self.locals["eval_env"]
+        env = self.locals["env"]
+
+        if info['done']:
+            if info['target_reached']:
+                self.sum_W += 1
+                self.success_trajs.append(info['traj'])
+            self.n_runs += 1
+            self.trajs.append(info['traj'])
+
+        return True
+
+
+    def _on_rollout_end(self) -> None:
+        """
+        This event is triggered before updating the policy.
+        After running a collect_rollouts for nb_steps timesteps.
+        """
+
+        self.nb_rollout += 1
+
+        ## extract eval env
+        eval_env = self.locals["eval_env"]
+        env = self.locals["env"]
+
+        if self.nb_rollout % self.freq_rollout_display == 0:
+
+            ## eval full trajectory
+            eval_traj,_ = eval_trajectory_humanoid(env, eval_env, self.model, self.algo_type, self.path, self.nb_rollout, False, video=self.video)
+            ## eval each individual skill
+            eval_skills = eval_skills_humanoidenv(env, eval_env, self.model, self.algo_type)
+
+            self._visu_trajectories(eval_env, eval_traj, eval_skills, self.trajs, self.success_trajs)
+            # self._visu_value_function(env, eval_env)
+
+            self.trajs = []
+            self.success_trajs = []
+
+        return True
+
+
+    def _visu_success_zones(self, eval_env, ax):
+        """
+        Visualize success zones as sphere of radius eps_success around skill-goals
+        """
+        L_states = copy.deepcopy(eval_env.skill_manager.L_states)
+
+        for state in L_states:
+            goal = eval_env.project_to_goal_space(state)
+
+            u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
+
+            x = goal[0] + 0.075*np.cos(u)*np.sin(v)
+            y = goal[1] + 0.075*np.sin(u)*np.sin(v)
+            z = goal[2] + 0.075*np.cos(v)
+            ax.plot_wireframe(x, y, z, color="blue", alpha = 0.1)
+
+        return
+
+
+    def _visu_trajectories(self, eval_env, eval_traj, eval_skills, training_trajs, success_trajs):
+
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='3d')
+
+        ## plot training traj
+        for traj in training_trajs:
+            X_traj = [state[0] for state in traj]
+            Y_traj = [state[1] for state in traj]
+            Z_traj = [state[2] for state in traj]
+            ax.plot(X_traj, Y_traj, Z_traj, color = "pink", alpha = 0.35)
+
+        for traj in success_trajs:
+            X_traj = [state[0] for state in traj]
+            Y_traj = [state[1] for state in traj]
+            Z_traj = [state[2] for state in traj]
+            ax.plot(X_traj, Y_traj, Z_traj, color = "red", alpha = 0.35)
+
+        ## scatter plot current goal
+        ax.scatter(eval_env.goal[0], eval_env.goal[1], eval_env.goal[2], color = "red", alpha = 0.5 )
+
+        ## scatter plot demo
+        demo = eval_env.skill_manager.L_states
+        # grasping_bools = [eval_env.check_grasping(state) for state in demo]
+        for state in demo: ## differentiate states w/ grasping and states w/o
+            ax.scatter(eval_env.project_to_goal_space(state)[0], eval_env.project_to_goal_space(state)[1], eval_env.project_to_goal_space(state)[2], color = "blue", alpha = 0.8)
+
+        self._visu_success_zones(eval_env, ax)
+
+        full_demo = eval_env.skill_manager.L_full_demonstration
+        X_demo = [eval_env.project_to_goal_space(state)[0] for state in full_demo]
+        Y_demo = [eval_env.project_to_goal_space(state)[1] for state in full_demo]
+        Z_demo = [eval_env.project_to_goal_space(state)[2] for state in full_demo]
+        ax.plot(X_demo, Y_demo, Z_demo, color = "blue", alpha = 0.8)
+
+        ## plot skills
+        for skill in eval_skills:
+            X_skill = [state[0] for state in skill]
+            Y_skill = [state[1] for state in skill]
+            Z_skill = [state[2] for state in skill]
+            ax.plot(X_skill, Y_skill, Z_skill, color = "black", alpha = 0.8)
+
+        ## scatter plot traj
+        X_eval = [state[0] for state in eval_traj]
+        Y_eval = [state[1] for state in eval_traj]
+        Z_eval = [state[2] for state in eval_traj]
+        ax.plot(X_eval, Y_eval, Z_eval, color = "red", alpha = 1.)
+
+        # ax.set_xlim((0., 1.))
+        ax.set_xlim((0., 5.))
+        # ax.set_ylim((0., 2.))
+        ax.set_ylim((0., -2))
+        # ax.set_zlim((0, 1.))
+        ax.set_zlim((0., 1.5))
+
+        for azim_ in range(45,360,90):
+            ax.view_init(azim = azim_)
+            plt.savefig(self.path + "/iteration_" + str(self.nb_rollout) + "_" + str(azim_) + ".png")
+        #plt.show()
+        plt.close(fig)
+
+        return 0

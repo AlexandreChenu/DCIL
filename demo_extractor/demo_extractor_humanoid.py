@@ -19,7 +19,7 @@ class DemoExtractor():
 	Object in charge of preparing the demonstration for GGI
 	"""
 
-	def __init__(self, path, demo_filename, demo_type = ".demo", env_name = "FetchEnv", env_args = {}, eps_state = 0.2,  verbose = 1):
+	def __init__(self, path, demo_filename, demo_type = ".demo", env_name = "HumanoidEnv", env_args = {}, eps_state = 0.2,  verbose = 1):
 		self.path = path
 		self.demo_filename = demo_filename
 		self.demo_type = demo_type
@@ -39,28 +39,27 @@ class DemoExtractor():
 
 		self.width_reward = 0.05
 
-		if self.demo_type == ".demo":
-			self.L_states, self.L_inner_states, self.L_actions = self.extract_from_demo()
-			self.L_full_demonstration = copy.deepcopy(self.L_states)
-			self.L_full_inner_demonstration = copy.deepcopy(self.L_inner_states)
-			self.L_states, self.L_inner_states, self.L_full_observations, self.L_actions, self.L_budgets = self.clean_demonstration_trajectory()
+		self.L_states, self.L_inner_states, self.L_actions = self.extract_from_demo()
 
-			assert len(self.L_actions) == len(self.L_full_observations)
 
-			## reduce to grasping only
-			self.L_states = self.L_states[0:6]
-			self.L_inner_states = self.L_inner_states[0:6]
-			self.L_budgets = self.L_budgets[0:6]
+		self.L_full_demonstration = copy.deepcopy(self.L_states)
+		self.L_full_inner_demonstration = copy.deepcopy(self.L_inner_states)
+		self.L_states, self.L_inner_states, self.starting_states, self.starting_inner_states, self.L_full_observations, self.L_actions, self.L_budgets = self.clean_demonstration_trajectory()
 
-			### artificially increase the budget for the grasping task in order to facilitate manoeuvres
-			# self.L_budgets[5] = self.L_budgets[5]*4
+		assert len(self.L_actions) == len(self.L_full_observations)
 
-			self.L_goals = [self.project_to_goal_space(state) for state in self.L_states]
+		## reduce to grasping only
+		self.L_states = self.L_states[0:6]
+		self.L_inner_states = self.L_inner_states[0:6]
+		self.starting_states = self.starting_states[0:6]
+		self.starting_inner_states = self.starting_inner_states[0:6]
+		self.L_budgets = self.L_budgets[0:6]
 
-		else:
-			print("WARNING: unknwown demonstration type!!")
+		### artificially increase the budget for the grasping task in order to facilitate manoeuvres
+		# self.L_budgets[5] = self.L_budgets[5]*4
 
-		# print("self.L_goals = ", self.L_goals)
+		self.L_goals = [self.project_to_goal_space(state) for state in self.L_states]
+
 
 
 	def extract_from_demo(self):
@@ -137,12 +136,16 @@ class DemoExtractor():
 		"""
 		clean_states = []
 		clean_inner_states = []
+		starting_states = []
+		starting_inner_states = []
 		L_full_observations = []
 		L_actions = []
 
 		## init lists
 		clean_states.append(self.L_states[0])
 		clean_inner_states.append(self.L_inner_states[0])
+		# starting_states.append([self.L_states[0]])
+		# starting_inner_states.append([self.L_inner_states[0]])
 
 		init_full_obs = {"observation":copy.deepcopy(clean_states[0]),
 					"achieved_goal":self.project_to_goal_space(clean_states[0]).copy(),
@@ -154,18 +157,54 @@ class DemoExtractor():
 		i = 0
 		L_budgets = []
 
+		# print("len(self.L_inner_states) = ", len(self.L_inner_states))
+		# print("len(self.L_states) = ", len(self.L_states))
+		#
+		# print("self.L_states[0] = ", self.L_states[0][:15])
+		# print("self.L_states[1] = ", self.L_states[1][:15])
+		#
+		# # for indx in range(len(self.L_inner_states[0])):
+		# # 	print("i = ", indx)
+		# # 	print(self.L_inner_states[0][indx])
+		# print("self.L_inner_states[0] = ", self.L_inner_states[0][3][:15])
+		# print("self.L_inner_states[1] = ", self.L_inner_states[1][3][:15])
+
 		while i < len(self.L_states)-1:
 			k = 1
 
 			sum_dist = 0
 
+			starting_state_set = [self.L_states[i]]
+			starting_inner_state_set = [self.L_inner_states[i]]
 			# cumulative distance
-			# while sum_dist <= self.eps_state and i + k < len(self.L_states) - 1:
-			# 	# sum_dist += np.linalg.norm( self.project_to_goal_space(self.L_states[i+k]) - self.project_to_goal_space(self.L_states[i+k-1]))
-			# 	sum_dist += self.compute_distance_in_goal_space(self.project_to_goal_space(self.L_states[i+k]), self.project_to_goal_space(self.L_states[i+k-1]))
-			# 	k += 1
-			#
-			# 	## save full observation with empty desired goal (filled later) & action
+			while sum_dist <= self.eps_state and i + k < len(self.L_states) - 1:
+				sum_dist += self.compute_distance_in_goal_space(self.project_to_goal_space(self.L_states[i+k]), self.project_to_goal_space(self.L_states[i+k-1]))
+
+				# starting_state_set.append(self.L_states[i+k])
+				# starting_inner_state_set.append(self.L_inner_states[i+k])
+
+				k += 1
+
+				## save full observation with empty desired goal (filled later) & action
+				full_obs = {"observation":copy.deepcopy(self.L_states[i+k]),
+							"achieved_goal":self.project_to_goal_space(self.L_states[i+k]).copy(),
+							"desired_goal":None}
+				L_full_observations.append(full_obs)
+
+				if return_action:
+					L_actions.append(self.L_actions[i+k]) ## add incomplete observation & associated action
+
+
+			if sum_dist > self.eps_state or i + k == len(self.L_states) - 1:
+				print("len(starting_state_set) = ", len(starting_state_set))
+				clean_states.append(self.L_states[i+k])
+				clean_inner_states.append(self.L_inner_states[i+k])
+				starting_states.append(starting_state_set)
+				starting_inner_states.append(starting_inner_state_set)
+
+			# distance threshold
+			# while self.compute_distance_in_goal_space(self.project_to_goal_space(self.L_states[i], default = False), self.project_to_goal_space(self.L_states[i+k], default = False)) <= self.eps_state and i + k < len(self.L_states)-1:
+			# 	#print("dist = ", np.linalg.norm( self.project_to_goal_space(self.L_states[i+k]) - self.project_to_goal_space(self.L_states[i])))
 			# 	full_obs = {"observation":copy.deepcopy(self.L_states[i]),
 			# 				"achieved_goal":self.project_to_goal_space(self.L_states[i]).copy(),
 			# 				"desired_goal":None}
@@ -174,24 +213,9 @@ class DemoExtractor():
 			# 		L_actions.append(self.L_actions[i]) ## add incomplete observation & associated action
 			#
 			# 	k += 1
-			# if sum_dist > self.eps_state or i + k == len(self.L_states) - 1:
-			# 	clean_states.append(self.L_states[i+k])
-			# 	clean_inner_states.append(self.L_inner_states[i+k-1])
-
-			# distance threshold
-			while self.compute_distance_in_goal_space(self.project_to_goal_space(self.L_states[i]), self.project_to_goal_space(self.L_states[i+k])) <= self.eps_state and i + k < len(self.L_states)-1:
-				#print("dist = ", np.linalg.norm( self.project_to_goal_space(self.L_states[i+k]) - self.project_to_goal_space(self.L_states[i])))
-				full_obs = {"observation":copy.deepcopy(self.L_states[i]),
-							"achieved_goal":self.project_to_goal_space(self.L_states[i]).copy(),
-							"desired_goal":None}
-				L_full_observations.append(full_obs)
-				if return_action:
-					L_actions.append(self.L_actions[i]) ## add incomplete observation & associated action
-
-				k += 1
-
-			clean_states.append(self.L_states[i+k])
-			clean_inner_states.append(self.L_inner_states[i+k-1])
+			#
+			# clean_states.append(self.L_states[i+k])
+			# clean_inner_states.append(self.L_inner_states[i+k-1])
 
 			## fill full observations with corresponding task goal
 			add_full_observations = []
@@ -226,7 +250,7 @@ class DemoExtractor():
 			if L_full_observations[j]["desired_goal"] is None:
 				L_full_observations[j]["desired_goal"] = self.project_to_goal_space(clean_states[-1]) ## complete observations with last desired goal
 
-		return clean_states, clean_inner_states, L_full_observations, L_actions, L_budgets
+		return clean_states, clean_inner_states, starting_states, starting_inner_states, L_full_observations, L_actions, L_budgets
 
 
 	def get_env(self):
@@ -234,15 +258,16 @@ class DemoExtractor():
 		Create environment
 		"""
 		print("self.env_name = ", self.env_name)
-		if "HumanoidEnv" in self.env_name:
-			env = gym.make(self.env_name, L_full_demonstration = self.L_full_demonstration,
+		env = gym.make(self.env_name, L_full_demonstration = self.L_full_demonstration,
 										  L_full_inner_demonstration = self.L_full_inner_demonstration,
 										  L_states = self.L_states,
+										  starting_states = self.starting_states,
+										  starting_inner_states = self.starting_inner_states,
 										  L_actions = self.L_actions,
 										  L_full_observations = self.L_full_observations,
 										  L_goals = self.L_goals,
 										  L_inner_states = self.L_inner_states,
-										  L_budgets = self.L_budgets,  env_option = self.env_option)
+										  L_budgets = self.L_budgets,  env_option = self.env_option, do_overshoot = self.env_args["do_overshoot"])
 
 		return env
 

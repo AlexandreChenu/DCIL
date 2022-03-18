@@ -39,11 +39,9 @@ class DemoExtractor():
 		self.width_reward = 0.05
 
 		self.L_states, self.L_inner_states, self.L_actions = self.extract_from_demo()
-
 		self.L_states = self.L_states[1:]
 		## remove extra dimensions
 		self.L_states = [state[:268] for state in self.L_states]
-
 		self.L_inner_states = self.L_inner_states[:-1]
 		## remove extra dimensions
 		for i in range(len(self.L_inner_states)):
