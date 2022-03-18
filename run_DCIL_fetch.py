@@ -90,6 +90,8 @@ def learn_DCIL(args, env, eval_env, path):
 
         model = SAC("MultiInputPolicy", env,
                                         learning_rate = args["lr"],
+                                        gamma = 0.95,
+                                        batch_size = 1024,
                                         replay_buffer_class=HerReplayBuffer,
                                         # Parameters for HER
                                         replay_buffer_kwargs=dict(
@@ -100,7 +102,7 @@ def learn_DCIL(args, env, eval_env, path):
                                         ),
                                         #action_noise = action_noise,
                                         ent_coef=args["alpha_ent"],
-                                        policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300], optimizer_kwargs={"eps":args["eps_optimizer"]}),#net_arch=[256, 256, 256]),
+                                        policy_kwargs = dict(log_std_init=-3, net_arch=[512, 512, 512], optimizer_kwargs={"eps":args["eps_optimizer"]}),#net_arch=[256, 256, 256]),
                                         #policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300], optimizer_class=torch.optim.RMSprop, optimizer_kwargs=dict(eps=args["eps_optimizer"])),
                                         verbose=1,
                                         warmup_duration=100,
@@ -372,7 +374,7 @@ if __name__ == '__main__':
     args["eps_optimizer"] = float(parsed_args.eps_optimizer)
     args["alpha_ent"] = float(parsed_args.alpha_ent)
     args["video"] = False
-    args["total_timesteps"] = 250000 #600000
+    args["total_timesteps"] = 200000 #600000
     args["lr"] = float(parsed_args.l)
     args["add_ent_reg"] = bool(int(parsed_args.ent_reg_bool))
 
@@ -387,7 +389,7 @@ if __name__ == '__main__':
     dt_string = '_%s_%s' % (datetime.now().strftime('%Y%m%d'), str(os.getpid()))
 
     cur_path = os.getcwd()
-    dir_path = cur_path + "/xp/DCIL_" + args["env_name"] + "_" + args["RL_algo"] + "_" + str(args["lr"]) + "_" + str(args["alpha_ent"]) + "_" + str(args["add_ent_reg"]) + "_" + str(args["demo_indx"]) + dt_string
+    dir_path = cur_path + "/xp/DCIL_" + args["env_name"] + "_" + args["RL_algo"] + "_" + str(args["lr"]) + "_" + str(args["alpha_ent"]) + "_" + str(args["bonus_reward_bool"]) + "_" + str(args["add_ent_reg"]) + "_" + str(args["demo_indx"]) + dt_string
     try:
         os.mkdir(dir_path)
     except OSError:
