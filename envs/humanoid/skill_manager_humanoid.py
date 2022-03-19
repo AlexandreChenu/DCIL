@@ -87,6 +87,10 @@ class SkillsManager():
 		else:
 			return None, None, False
 
+	def add_success_overshoot(self,skill_indx):
+		self.L_overshoot_feasible[skill_indx-1]=True
+		return
+
 
 	def add_success(self, skill_indx):
 		"""

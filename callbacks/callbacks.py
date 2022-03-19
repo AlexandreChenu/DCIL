@@ -711,7 +711,7 @@ class LogCallbackHumanoidEnv(BaseCallback):
 
         for azim_ in range(45,360,90):
             ax.view_init(azim = azim_)
-            plt.savefig(self.path + "/iteration_" + str(self.nb_rollout) + "_" + str(azim_) + ".png")
+            plt.savefig(self.path + "/iteration_" + str(azim_) + "_" + str(self.nb_rollout) + ".png")
         #plt.show()
         plt.close(fig)
 
