@@ -11,7 +11,7 @@
 - numpy
 - cv2
 - seaborn
-- tensorboard (for SAC update monitoring)
+- tensorboard 
 
 
 To run DCIL in the fetch environment, please clone Go-Explore repo:
@@ -54,6 +54,11 @@ with path_to_goexplore, the absolute path to the go-explore repo.
 
 ### Launch commands
 
+For the toy DubinsMaze environment | Tested: successful skill-chaining after ~15k training steps: 
+
+```sh
+python run_DCIL_toy_maze.py --algo SAC_HER --add_bonus 1 --add_ent_reg 0
+```
 
 For the DubinsMaze environment: 
 ```sh
