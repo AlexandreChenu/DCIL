@@ -72,4 +72,7 @@ Paper available soon
 TODO 
 
 ### Training example 
-TODO
+
+DubinsMaze environment: 
+
+![](https://github.com/AlexandreChenu/DCIL/media/DCIL_dubins1.gif)
