@@ -75,4 +75,4 @@ TODO
 
 DubinsMaze environment: 
 
-![](https://github.com/AlexandreChenu/DCIL/media/DCIL_dubins1.gif)
+![](https://github.com/AlexandreChenu/DCIL/blob/main/media/DCIL_dubins1.gif)
