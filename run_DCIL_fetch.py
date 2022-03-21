@@ -133,8 +133,10 @@ def learn_DCIL(args, env, eval_env, path):
 
         model = TQC("MultiInputPolicy", env,
                                         learning_rate = args["lr"],
-                                        gamma = 0.95,
-                                        batch_size = 1024,
+                                        #gamma = 0.95,
+                                        #batch_size = 1024,
+                                        gamma = 0.99,
+                                        batch_size = 256,
                                         learning_starts = 1000,
                                         replay_buffer_class=HerReplayBuffer,
                                         # Parameters for HER
@@ -145,8 +147,8 @@ def learn_DCIL(args, env, eval_env, path):
                                         max_episode_length=max_episode_length,
                                         ),
                                         ent_coef=args["alpha_ent"],
-                                        policy_kwargs = dict(log_std_init=-3, net_arch=[512, 512, 512]),
-                                        #policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300], optimizer_class=torch.optim.RMSprop, optimizer_kwargs=dict(eps=args["eps_optimizer"])),
+                                        #policy_kwargs = dict(log_std_init=-3, net_arch=[512, 512, 512]),
+                                        policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300]),
                                         verbose=1,
                                         device= device,
                                         add_bonus_reward = args["bonus_reward_bool"],

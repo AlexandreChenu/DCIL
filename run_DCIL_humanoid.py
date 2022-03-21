@@ -370,7 +370,7 @@ if __name__ == '__main__':
     args["eps_optimizer"] = float(parsed_args.eps_optimizer)
     args["alpha_ent"] = float(parsed_args.alpha_ent)
     args["video"] = False
-    args["total_timesteps"] = 250000 #600000
+    args["total_timesteps"] = 400000 #600000
     args["lr"] = float(parsed_args.l)
     args["add_ent_reg"] = bool(int(parsed_args.ent_reg_bool))
 

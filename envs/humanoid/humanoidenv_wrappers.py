@@ -80,7 +80,7 @@ class HumanoidEnvGCPHERSB3(gym.Env#MyComplexFetchEnv):
 
 
 		# self.width_success = width_success ## hyper-parametre assez difficile à ajuster en dim 6
-		self.width_success = 0.05
+		self.width_success = 0.075
 
 
 		self.total_steps = sum(self.skill_manager.L_budgets)
