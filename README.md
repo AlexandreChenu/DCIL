@@ -13,7 +13,7 @@
 - seaborn
 - tensorboard 
 
-Note: version details in dcil_env.yml
+Note: versions detailed in dcil_env.yml
 
 ### Dependencies for Fetch environment
 
