@@ -65,12 +65,12 @@ python run_DCIL_toy_maze.py --algo SAC_HER --add_bonus 1 --add_ent_reg 0
 
 For the DubinsMaze environment: 
 ```sh
-python run_DCIL_maze.py --eps_dist 1. --algo SAC_HER --env DubinsMazeEnv --size 5 --demo_path ./demos/dubinsmazeenv/demo_set_5/ --bonus_bool 1 --overshoot_bool 1 -x 1
+python run_DCIL_maze.py --eps_dist 1. --algo SAC_HER --env DubinsMazeEnv --size 5 --demo_path ./demos/dubinsmazeenv/demo_set5/ --bonus_bool 1 --overshoot_bool 1 --add_ent_reg 0 -x 1
 ```
 
 For the FetchEnv environment
 ```sh
-python run_DCIL_fetch.py --eps_dist 0.5 --algo SAC_HER --env FetchEnv_grasping -l 0.001 --demo_path ./demos/fetchenv/demo_set/ --bonus_bool 1 --overshoot_bool 1 -x 1 
+python run_DCIL_fetch.py --eps_dist 0.5 --algo SAC_HER --env FetchEnv_full -l 0.001 --demo_path ./demos/fetchenv/ --bonus_bool 1 --overshoot_bool 1 --ent_reg_bool 0 -x 1
 ```
 
 ### How does it work
