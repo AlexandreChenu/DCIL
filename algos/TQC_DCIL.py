@@ -97,6 +97,8 @@ class TQC(OffPolicyAlgorithm):
         device: Union[th.device, str] = "auto",
         add_bonus_reward = True,
         add_ent_reg_critic = True,
+        make_logs = True,
+        path ="",
         _init_setup_model: bool = True,
     ):
 
@@ -142,6 +144,16 @@ class TQC(OffPolicyAlgorithm):
         self.add_bonus_reward = add_bonus_reward
         self.add_ent_reg_critic = add_ent_reg_critic
 
+        self.train_iteration = 0
+
+        self.make_logs = make_logs
+        ## save critics value for further analysis
+        if self.make_logs:
+            self.log_losses_freq = 100
+            ## save critic and actor losses for further analysis
+            self.f_critic_losses = open(path + "/critic_losses.txt", "w")
+            self.f_actor_losses = open(path + "/actor_losses.txt", "w")
+
         if _init_setup_model:
             self._setup_model()
 
@@ -184,6 +196,7 @@ class TQC(OffPolicyAlgorithm):
         self.critic_target = self.policy.critic_target
 
     def train(self, gradient_steps: int, batch_size: int = 64) -> None:
+        self.train_iteration += 1
         # Switch to train mode (this affects batch norm / dropout)
         self.policy.set_training_mode(True)
         # Update optimizers learning rate
@@ -200,7 +213,7 @@ class TQC(OffPolicyAlgorithm):
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
             # replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
-            replay_data, infos, next_ep_final_transitions_infos, her_indices, _, _, _, _, _, _, _ = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
+            replay_data, infos, her_indices= self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 
             ## R \in {0,1}
             diff_reward_done = replay_data.dones - replay_data.rewards/self.max_reward
@@ -241,8 +254,6 @@ class TQC(OffPolicyAlgorithm):
                 transformed_rewards = self._transform_rewards(replay_data, batch_size, infos, desired_goals, next_desired_goals, her_indices, overshoot_goal)
                 transformed_rewards = transformed_rewards.detach()
                 # print("transformed_rewards[-10:] = ", transformed_rewards[-10:])
-
-                assert len(infos) == len(next_ep_final_transitions_infos)
 
             else:
                 transformed_rewards = replay_data.rewards
@@ -319,6 +330,12 @@ class TQC(OffPolicyAlgorithm):
                 polyak_update(self.critic.parameters(), self.critic_target.parameters(), self.tau)
 
         self._n_updates += gradient_steps
+
+        if self.train_iteration % self.log_losses_freq == 0 and self.make_logs:
+            self.f_critic_losses.write(str(np.mean(critic_losses)) + "\n")
+            self.f_critic_losses.flush()
+            self.f_actor_losses.write(str(np.mean(actor_losses)) + "\n")
+            self.f_actor_losses.flush()
 
         self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
         self.logger.record("train/ent_coef", np.mean(ent_coefs))

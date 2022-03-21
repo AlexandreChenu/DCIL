@@ -78,7 +78,7 @@ def learn_GGI(args, env, eval_env, path):
         ent_coef= 0.1,
         policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300]),
         warmup_duration=100,
-        verbose=1, path=path, make_logs = True,
+        verbose=1, path=path, make_logs = False,
         bonus_reward_bool = args["bonus_reward_bool"],
         add_ent_reg_critic = args["add_ent_reg"],
         alpha_bonus = 0.1,

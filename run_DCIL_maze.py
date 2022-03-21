@@ -78,9 +78,10 @@ def learn_DCIL(args, env, eval_env, path):
                                         online_sampling=online_sampling,
                                         max_episode_length=max_episode_length,
                                         ),
+                                        ent_coef=0.1,
                                         policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300]),
                                         warmup_duration=100,
-                                        verbose=1, path=path, make_logs = True,
+                                        verbose=1, path=path, make_logs = False,
                                         bonus_reward_bool = args["bonus_reward_bool"],
                                         add_ent_reg_critic = args["add_ent_reg"],
                                         alpha_bonus = 1.,
@@ -114,6 +115,7 @@ def learn_DCIL(args, env, eval_env, path):
                                         #policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300], optimizer_class=torch.optim.RMSprop, optimizer_kwargs=dict(eps=args["eps_optimizer"])),
                                         verbose=1,
                                         device= device,
+                                        path=path, make_logs = False,
                                         add_bonus_reward = args["bonus_reward_bool"],
                                         add_ent_reg_critic = args["add_ent_reg"])
 

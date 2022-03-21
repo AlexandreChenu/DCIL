@@ -147,9 +147,10 @@ def learn_DCIL(args, env, eval_env, path):
                                         max_episode_length=max_episode_length,
                                         ),
                                         ent_coef=0.001,
-                                        #policy_kwargs = dict(log_std_init=-3, net_arch=[512, 512, 512]),
+                                        # policy_kwargs = dict(log_std_init=-3, net_arch=[512, 512, 512]),
                                         policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300]),
                                         verbose=1,
+                                        path = path,
                                         device= device,
                                         add_bonus_reward = args["bonus_reward_bool"],
                                         add_ent_reg_critic = args["add_ent_reg"])
@@ -231,6 +232,7 @@ def learn_DCIL(args, env, eval_env, path):
 
             nb_skills_feasible = sum([int(skill_feasible) for skill_feasible in env.envs[0].skill_manager.L_skills_feasible])
             f_nb_skills_feasible.write(str(nb_skills_feasible) + "\n")
+            f_nb_skills_feasible.flush()
 
             callback.callbacks[0].sum_W = 0
             callback.callbacks[0].n_runs = 0
@@ -241,6 +243,7 @@ def learn_DCIL(args, env, eval_env, path):
                 ratio = 0.
 
             f_ratio.write(str(ratio) + "\n")
+            f_ratio.flush()
             print("|    success ratio (successful rollouts / total rollouts) =  ", ratio)
 
             eval_traj, skills_successes, rewards = eval_trajectory_fetchenv(env, eval_env, model,
@@ -265,6 +268,7 @@ def learn_DCIL(args, env, eval_env, path):
 
 
             f_nb_skill_succeeded.write(str(sum([int(skill_success) for skill_success in skills_successes])) + "\n")
+            f_nb_skill_succeeded.flush()
 
             if successful_traj or total_reward > 0.:
                 eval_traj, trasks_successes, _ = eval_trajectory_fetchenv(env, eval_env,
@@ -296,41 +300,46 @@ def learn_DCIL(args, env, eval_env, path):
         if rollout_collection_cnt > max_rollout_collection:
             rollout_collection_cnt = 0
 
-        if rollout_collection_cnt % 10 == 0:
-            process = psutil.Process(os.getpid())
-            f_memory_usage.write(str(process.memory_info().rss / 1024 ** 2) + "\n")
-            f_RAM_memory.write(str(psutil.virtual_memory()[2]) + "\n")
-            f_memory_percent.write(str(process.memory_percent()) + "\n")
+        # if rollout_collection_cnt % 10 == 0:
+        #     process = psutil.Process(os.getpid())
+        #     f_memory_usage.write(str(process.memory_info().rss / 1024 ** 2) + "\n")
+        #     f_RAM_memory.write(str(psutil.virtual_memory()[2]) + "\n")
+        #     f_memory_percent.write(str(process.memory_percent()) + "\n")
 
     ## close log files
-    model.f_log_next_q_values.close()
-    model.f_log_next_q_values = None
-    model.f_log_target_q_values.close()
-    model.f_log_target_q_values = None
-    model.f_next_log_prob.close()
-    model.f_next_log_prob = None
-    model.f_log_current_q_values.close()
-    model.f_log_current_q_values = None
-    model.f_weights_sum.close()
-    model.f_weights_sum = None
-    model.f_critic_losses.close()
-    model.f_critic_losses = None
-    model.f_actor_losses.close()
-    model.f_actor_losses = None
-    model.f_critic_errors.close()
-    model.f_critic_errors = None
-
+    if "SAC" in args["RL_algo"]:
+        model.f_log_next_q_values.close()
+        model.f_log_next_q_values = None
+        model.f_log_target_q_values.close()
+        model.f_log_target_q_values = None
+        model.f_next_log_prob.close()
+        model.f_next_log_prob = None
+        model.f_log_current_q_values.close()
+        model.f_log_current_q_values = None
+        model.f_weights_sum.close()
+        model.f_weights_sum = None
+        model.f_critic_losses.close()
+        model.f_critic_losses = None
+        model.f_actor_losses.close()
+        model.f_actor_losses = None
+        model.f_critic_errors.close()
+        model.f_critic_errors = None
+    else:
+        model.f_critic_losses.close()
+        model.f_critic_losses = None
+        model.f_actor_losses.close()
+        model.f_actor_losses = None
 
     ## save model
-    model.save(path + "/GCP_model")
+    # model.save(path + "/GCP_model")
 
     # f.close()
     # f_m_r.close()
     # f_m_l.close()
     f_ratio.close()
-    f_memory_usage.close()
-    f_RAM_memory.close()
-    f_memory_percent.close()
+    # f_memory_usage.close()
+    # f_RAM_memory.close()
+    # f_memory_percent.close()
     f_nb_skill_succeeded.close()
     f_nb_skills_feasible.close()
 

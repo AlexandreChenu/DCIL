@@ -95,8 +95,6 @@ class SAC(OffPolicyAlgorithm):
         self,
         policy: Union[str, Type[SACPolicy]],
         env: Union[GymEnv, str],
-        # L_goals,
-        # L_steps,
         learning_rate: Union[float, Schedule] = 3e-4,
         buffer_size: int = 1000000,  # 1e6
         learning_starts: int = 1000,
@@ -358,21 +356,22 @@ class SAC(OffPolicyAlgorithm):
             # using action from the replay buffer
             current_q_values = self.critic(replay_data.observations, replay_data.actions)
 
-            for i in range(current_q_values[0].shape[0]):
-                if abs(current_q_values[0][i] - target_q_values[i]) > 1.:
+            if self.make_logs:
+                for i in range(current_q_values[0].shape[0]):
+                    if abs(current_q_values[0][i] - target_q_values[i]) > 1.:
 
-                    ## relabelling
-                    if i < int(self.replay_buffer.her_ratio*self.batch_size):
-                        if dones[i] == 0.:
-                            self.relabel_bs_error+= 1
-                        else:
-                            self.relabel_success_error+=1
-                    ## no relabelling
-                    else :
-                        if dones[i] == 0.:
-                            self.bs_error+= 1
-                        else:
-                            self.success_error+=1
+                        ## relabelling
+                        if i < int(self.replay_buffer.her_ratio*self.batch_size):
+                            if dones[i] == 0.:
+                                self.relabel_bs_error+= 1
+                            else:
+                                self.relabel_success_error+=1
+                        ## no relabelling
+                        else :
+                            if dones[i] == 0.:
+                                self.bs_error+= 1
+                            else:
+                                self.success_error+=1
 
 
 
