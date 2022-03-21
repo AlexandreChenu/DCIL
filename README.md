@@ -77,4 +77,4 @@ TODO
 
 ### Skill-chaining Fetch 
 
-![](https://github.com/AlexandreChenu/DCIL/blob/main/media/fetch_demo3_run1_fps.mp4)
+![](https://github.com/AlexandreChenu/DCIL/blob/main/media/DCIL_fetch.mp4)
