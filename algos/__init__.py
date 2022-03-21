@@ -1,2 +1,2 @@
 from .policies import CnnPolicy, MlpPolicy, MultiInputPolicy
-from .tqc import TQC
+from .TQC_DCIL import TQC

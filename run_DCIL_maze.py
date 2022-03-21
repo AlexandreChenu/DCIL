@@ -29,14 +29,15 @@ from torch.autograd import Variable
 import torch.utils.data as Data
 
 
-from stable_baselines3 import HerReplayBuffer, PPO, DDPG, TD3#, SAC, TD3
+from stable_baselines3 import HerReplayBuffer#, PPO, DDPG, TD3#, SAC, TD3
 from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
 from stable_baselines3.common.utils import safe_mean
 from stable_baselines3.common.buffers import DictRolloutBuffer
 
-from SAC_utils.SAC_DCIL_maze import SAC
+from algos.SAC_DCIL import SAC
+from algos.TQC_DCIL import TQC
 from demo_extractor.demo_extractor_maze import DemoExtractor
 from evaluate.dubinsmazeenv.evaluate_mazeenv import eval_trajectory_mazeenv
 from callbacks.callbacks import LogCallbackMazeEnv
@@ -69,23 +70,55 @@ def learn_DCIL(args, env, eval_env, path):
         ##### Warning: should it be fixed or can it be variable
 
         model = SAC("MultiInputPolicy", env, #eval_env.L_states, eval_env.L_steps,
-                    learning_rate = 1e-3, replay_buffer_class=HerReplayBuffer,
-        # Parameters for HER
-        replay_buffer_kwargs=dict(
-        n_sampled_goal=4,
-        goal_selection_strategy=goal_selection_strategy,
-        online_sampling=online_sampling,
-        max_episode_length=max_episode_length,
-        ),
-        policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300]),
-        warmup_duration=100,
-        verbose=1, path=path, make_logs = True,
-        bonus_reward_bool = args["bonus_reward_bool"],
-        alpha_bonus = 1.,
-        device= device)
+                                        learning_rate = 1e-3, replay_buffer_class=HerReplayBuffer,
+                                        # Parameters for HER
+                                        replay_buffer_kwargs=dict(
+                                        n_sampled_goal=4,
+                                        goal_selection_strategy=goal_selection_strategy,
+                                        online_sampling=online_sampling,
+                                        max_episode_length=max_episode_length,
+                                        ),
+                                        policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300]),
+                                        warmup_duration=100,
+                                        verbose=1, path=path, make_logs = True,
+                                        bonus_reward_bool = args["bonus_reward_bool"],
+                                        add_ent_reg_critic = args["add_ent_reg"],
+                                        alpha_bonus = 1.,
+                                        device= device)
+
+    if args["RL_algo"] == "TQC_HER":
+        # Available strategies (cf paper): future, final, episode
+        goal_selection_strategy = 'future' # equivalent to GoalSelectionStrategy.FUTURE
+        # If True the HER transitions will get sampled online
+        online_sampling = True
+
+        # Time limit for the episodes
+        max_episode_length = 50
+        ##### Warning: should it be fixed or can it be variable
+
+        model = TQC("MultiInputPolicy", env,
+                                        learning_rate = 1e-3,
+                                        gamma = 0.99,
+                                        batch_size = 256,
+                                        learning_starts = 100,
+                                        replay_buffer_class=HerReplayBuffer,
+                                        # Parameters for HER
+                                        replay_buffer_kwargs=dict(
+                                        n_sampled_goal=4,
+                                        goal_selection_strategy=goal_selection_strategy,
+                                        online_sampling=online_sampling,
+                                        max_episode_length=max_episode_length,
+                                        ),
+                                        ent_coef=0.1,
+                                        policy_kwargs = dict(log_std_init=-3, net_arch=[400,300]),
+                                        #policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300], optimizer_class=torch.optim.RMSprop, optimizer_kwargs=dict(eps=args["eps_optimizer"])),
+                                        verbose=1,
+                                        device= device,
+                                        add_bonus_reward = args["bonus_reward_bool"],
+                                        add_ent_reg_critic = args["add_ent_reg"])
 
     ## setup callback and learning
-    callback = LogCallbackMazeEnv(path, args["algo_type"], eval_env)
+    callback = LogCallbackMazeEnv(path, args["RL_algo"], args["algo_type"], eval_env)
     total_timesteps, callback = model._setup_learn(args["total_timesteps"],
                                                         eval_env, callback,
                                                         -1, 5, args["RL_algo"],
@@ -135,8 +168,10 @@ def learn_DCIL(args, env, eval_env, path):
             break
 
         if rollout_collection_cnt > 100:
-            print("nb of successfull rollouts = ", callback.callbacks[0].sum_W)
-            print("total nb of rollouts = ", callback.callbacks[0].n_runs)
+            print("------------------------------------------------------------------------------------------------------------")
+            print("| skills/")
+            print("|    nb of successfull skill-rollouts: ", callback.callbacks[0].sum_W)
+            print("|    total nb of skill-rollouts = ", callback.callbacks[0].n_runs)
             sum_W = callback.callbacks[0].sum_W
             n_runs = callback.callbacks[0].n_runs
 
@@ -148,14 +183,15 @@ def learn_DCIL(args, env, eval_env, path):
             else:
                 ratio = 0.
             f_ratio.write(str(ratio) + "\n")
-            print("success ratio =  ", ratio)
+            print("|    success ratio (successful rollouts / total rollouts) =  ", ratio)
 
             ## evaluate chaining of skills
             eval_traj, skills_successes, max_zone = eval_trajectory_mazeenv(env, eval_env, model, args["algo_type"])
-            print("full evaluation success = ", skills_successes)
+            print("|    skill-chaining: ", skills_successes)
+            successfull_traj = skills_successes[-1]
+            print("|    skill-chaining success: ", successful_traj)
+            print("------------------------------------------------------------------------------------------------------------")
 
-            successful_traj = skills_successes[-1]
-            print("full evaluation success = ", successful_traj)
 
             f_nb_skill_succeeded.write(str(sum([int(skill_success) for skill_success in skills_successes])) + "\n")
             f_max_zone.write(str(max_zone) + "\n")
@@ -200,12 +236,8 @@ if __name__ == '__main__':
     parser.add_argument('--demo_path', help='demostration file')
     parser.add_argument('--size', help='maze size')
     parser.add_argument('--bonus_bool', help='add bonus reward')
-    parser.add_argument('-b', help='add BC regularization term')
     parser.add_argument('--overshoot_bool', help='overshoot if success yes(1) no(0)')
-    parser.add_argument('--n_step', help='n step')
-    parser.add_argument('--n_step_bool', help='add n-step return for critic update yes(1) no(0)')
-    parser.add_argument('--n_step_bonus', help='n step bonus')
-    parser.add_argument('--n_step_bonus_bool', help='add n-step return for bonus yes(1) no(0)')
+    parser.add_argument('--add_ent_reg', help='add entropy regularization for critic')
     parser.add_argument('-x', help='demo indx')
 
     parsed_args = parser.parse_args()
@@ -223,6 +255,7 @@ if __name__ == '__main__':
     args["demo_indx"] = int(parsed_args.x)
     args["bonus_reward_bool"] = bool(int(parsed_args.bonus_bool))
     args["do_overshoot"] = bool(int(parsed_args.overshoot_bool))
+    args["add_ent_reg"] = bool(int(parsed_args.add_ent_reg))
     # args["demo_filename"] = args["demo_directory"] + "/" + str(np.random.randint(1,21)) + ".demo"
     args["demo_filename"] = args["demo_directory"] + "/" + str(args["demo_indx"]) + ".demo"
     args["total_timesteps"] = 200000

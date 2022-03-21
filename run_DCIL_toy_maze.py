@@ -33,8 +33,8 @@ from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckA
 from stable_baselines3.common.utils import safe_mean
 from stable_baselines3.common.buffers import DictRolloutBuffer
 
-from SAC_utils.SAC_DCIL_maze import SAC
-from tqc import *
+from algos.SAC_DCIL import SAC
+from algos.TQC_DCIL import TQC
 from demo_extractor.demo_extractor_maze import DemoExtractor
 from evaluate.dubinsmazeenv.evaluate_mazeenv import eval_trajectory_mazeenv
 from callbacks.callbacks import LogCallbackMazeEnv
@@ -75,6 +75,7 @@ def learn_GGI(args, env, eval_env, path):
         online_sampling=online_sampling,
         max_episode_length=max_episode_length,
         ),
+        ent_coef= 0.1,
         policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300]),
         warmup_duration=100,
         verbose=1, path=path, make_logs = True,
@@ -168,8 +169,10 @@ def learn_GGI(args, env, eval_env, path):
             break
 
         if rollout_collection_cnt > 100:
-            print("nb of successfull rollouts = ", callback.callbacks[0].sum_W)
-            print("total nb of rollouts = ", callback.callbacks[0].n_runs)
+            print("------------------------------------------------------------------------------------------------------------")
+            print("| skills/")
+            print("|    nb of successfull skill-rollouts: ", callback.callbacks[0].sum_W)
+            print("|    total nb of skill-rollouts = ", callback.callbacks[0].n_runs)
             sum_W = callback.callbacks[0].sum_W
             n_runs = callback.callbacks[0].n_runs
 
@@ -180,14 +183,14 @@ def learn_GGI(args, env, eval_env, path):
                 ratio = float(sum_W) / float(n_runs)
             else:
                 ratio = 0.
-            print("success ratio =  ", ratio)
+            print("|    success ratio (successful rollouts / total rollouts) =  ", ratio)
 
             ## evaluate chaining of skills
             eval_traj, skills_successes, max_zone = eval_trajectory_mazeenv(env, eval_env, model, args["algo_type"])
-            print("skill-chaining = ", skills_successes)
-
-            successful_traj = skills_successes[-1]
-            print("full evaluation success = ", successful_traj)
+            print("|    skill-chaining: ", skills_successes)
+            successfull_traj = skills_successes[-1]
+            print("|    skill-chaining success: ", successful_traj)
+            print("------------------------------------------------------------------------------------------------------------")
 
             # f_ratio.write(str(ratio) + "\n")
             f_nb_chained_skills.write(str(sum([int(skill_success) for skill_success in skills_successes])) + "\n")

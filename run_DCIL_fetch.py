@@ -40,7 +40,7 @@ torch.set_default_tensor_type('torch.FloatTensor')
 
 from envs import *
 
-from stable_baselines3 import HerReplayBuffer, PPO, DDPG
+from stable_baselines3 import HerReplayBuffer#, PPO, DDPG
 # from stable_baselines3 import PPO, DDPG
 # from SAC_utils.her_replay_buffer import HerReplayBuffer
 
@@ -51,8 +51,8 @@ from stable_baselines3.common.utils import safe_mean
 from stable_baselines3.common.buffers import DictRolloutBuffer
 from stable_baselines3.common.logger import configure
 
-from SAC_utils.SAC_DCIL_fetch import SAC
-from tqc import *
+from algos.SAC_DCIL import SAC
+from algos.TQC_DCIL import TQC
 
 from demo_extractor.demo_extractor_fetch import DemoExtractor
 from evaluate.fetchenv.evaluate_fetchenv import eval_trajectory_fetchenv
@@ -101,8 +101,8 @@ def learn_DCIL(args, env, eval_env, path):
                                         max_episode_length=max_episode_length,
                                         ),
                                         #action_noise = action_noise,
-                                        ent_coef=args["alpha_ent"],
-                                        policy_kwargs = dict(log_std_init=-3, net_arch=[512, 512, 512], optimizer_kwargs={"eps":args["eps_optimizer"]}),#net_arch=[256, 256, 256]),
+                                        ent_coef=0.001,
+                                        policy_kwargs = dict(log_std_init=-3, net_arch=[512, 512, 512]),
                                         #policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300], optimizer_class=torch.optim.RMSprop, optimizer_kwargs=dict(eps=args["eps_optimizer"])),
                                         verbose=1,
                                         warmup_duration=100,
@@ -146,7 +146,7 @@ def learn_DCIL(args, env, eval_env, path):
                                         online_sampling=online_sampling,
                                         max_episode_length=max_episode_length,
                                         ),
-                                        ent_coef=args["alpha_ent"],
+                                        ent_coef=0.001,
                                         #policy_kwargs = dict(log_std_init=-3, net_arch=[512, 512, 512]),
                                         policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300]),
                                         verbose=1,
@@ -217,14 +217,17 @@ def learn_DCIL(args, env, eval_env, path):
         if continue_training is False:
             break
 
+        #### Logs
         if rollout_collection_cnt > max_rollout_collection:
-            print("nb of successfull rollouts = ", callback.callbacks[0].sum_W)
-            print("total nb of rollouts = ", callback.callbacks[0].n_runs)
+            print("------------------------------------------------------------------------------------------------------------")
+            print("| skills/")
+            print("|    nb of successfull skill-rollouts: ", callback.callbacks[0].sum_W)
+            print("|    total nb of skill-rollouts = ", callback.callbacks[0].n_runs)
             sum_W = callback.callbacks[0].sum_W
             n_runs = callback.callbacks[0].n_runs
 
-            print("skills feasibility = ", env.envs[0].skill_manager.L_skills_feasible)
-            print("overshoot feasibility = ", env.envs[0].skill_manager.L_overshoot_feasible)
+            print("|    skills feasibility = ", env.envs[0].skill_manager.L_skills_feasible)
+            print("|    overshoot feasibility = ", env.envs[0].skill_manager.L_overshoot_feasible)
 
             nb_skills_feasible = sum([int(skill_feasible) for skill_feasible in env.envs[0].skill_manager.L_skills_feasible])
             f_nb_skills_feasible.write(str(nb_skills_feasible) + "\n")
@@ -238,7 +241,7 @@ def learn_DCIL(args, env, eval_env, path):
                 ratio = 0.
 
             f_ratio.write(str(ratio) + "\n")
-            print("success ratio =  ", ratio)
+            print("|    success ratio (successful rollouts / total rollouts) =  ", ratio)
 
             eval_traj, skills_successes, rewards = eval_trajectory_fetchenv(env, eval_env, model,
                                                                         args["algo_type"],
@@ -247,12 +250,13 @@ def learn_DCIL(args, env, eval_env, path):
                                                                         False,
                                                                         video = args["video"])
 
-            print("full evaluation success = ", skills_successes)
+            print("|    skill-chaining: ", skills_successes)
             successfull_traj = skills_successes[-1]
-            print("full evaluation success = ", successful_traj)
+            print("|    skill-chaining success: ", successful_traj)
 
             total_reward = sum(rewards)
-            print("total_reward = ", total_reward)
+            print("|    sparse reward accumulated over skill chaining: ", total_reward)
+            print("------------------------------------------------------------------------------------------------------------")
 
             #print("model._vec_normalize_env = ", model._vec_normalize_env.obs_rms["observation"].mean[:10])
 
@@ -345,8 +349,8 @@ if __name__ == '__main__':
     parser.add_argument('--demo_path', help='path to demo file')
     parser.add_argument('--bonus_bool', help='add bonus reward')
     parser.add_argument('--overshoot_bool', help='overshoot if success yes(1) no(0)')
-    parser.add_argument('--eps_optimizer', help='epsilon for adam optimizer')
-    parser.add_argument('--alpha_ent', help='temperature coefficient for entropy regularization')
+    # parser.add_argument('--eps_optimizer', help='epsilon for adam optimizer')
+    # parser.add_argument('--alpha_ent', help='temperature coefficient for entropy regularization')
     parser.add_argument('-l', help='learning rate')
     parser.add_argument('-x', help='demo indx')
     parser.add_argument('--ent_reg_bool', help='add entropy regularization term for critic update')
@@ -373,8 +377,8 @@ if __name__ == '__main__':
     args["eps_dist"] = float(parsed_args.eps_dist)
     args["bonus_reward_bool"] = bool(int(parsed_args.bonus_bool))
     args["do_overshoot"] = bool(int(parsed_args.overshoot_bool))
-    args["eps_optimizer"] = float(parsed_args.eps_optimizer)
-    args["alpha_ent"] = float(parsed_args.alpha_ent)
+    # args["eps_optimizer"] = float(parsed_args.eps_optimizer)
+    # args["alpha_ent"] = float(parsed_args.alpha_ent)
     args["video"] = False
     args["total_timesteps"] = 200000 #600000
     args["lr"] = float(parsed_args.l)
@@ -391,7 +395,7 @@ if __name__ == '__main__':
     dt_string = '_%s_%s' % (datetime.now().strftime('%Y%m%d'), str(os.getpid()))
 
     cur_path = os.getcwd()
-    dir_path = cur_path + "/xp/DCIL_" + args["env_name"] + "_" + args["RL_algo"] + "_" + str(args["lr"]) + "_" + str(args["alpha_ent"]) + "_" + str(args["bonus_reward_bool"]) + "_" + str(args["add_ent_reg"]) + "_" + str(args["demo_indx"]) + dt_string
+    dir_path = cur_path + "/xp/DCIL_" + args["env_name"] + "_" + args["RL_algo"] + "_" + str(args["lr"]) + "_" + str(args["bonus_reward_bool"]) + "_" + str(args["add_ent_reg"]) + "_" + str(args["demo_indx"]) + dt_string
     try:
         os.mkdir(dir_path)
     except OSError:
@@ -429,7 +433,7 @@ if __name__ == '__main__':
     # env = VecNormalize(env, env_args["env_option"], norm_obs=True, norm_reward=False, clip_obs=np.inf)
     env = VecNormalize(env, norm_obs=True, norm_reward=False, clip_obs=np.inf)
 
-    ## load default vec normalize env
+    ## load default vec normalize env (obtained via random sampling of actions)
     with open(args["vec_norm_directory"]+"/vec_normalize_env_" + str(args["demo_indx"]) + "_random.pkl","rb") as f:
         default_vec_normalize_env = pickle.load(f)
 
@@ -444,8 +448,6 @@ if __name__ == '__main__':
 
     env = VecMonitor(env)
     # env = VecNormalize(env, norm_obs=True, norm_reward=False)
-
-
 
     ## create eval environment
     eval_env = demo_extractor.get_env()

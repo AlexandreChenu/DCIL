@@ -51,8 +51,8 @@ from stable_baselines3.common.utils import safe_mean
 from stable_baselines3.common.buffers import DictRolloutBuffer
 from stable_baselines3.common.logger import configure
 
-from SAC_utils.SAC_DCIL_fetch import SAC
-from tqc import *
+from algos.SAC_DCIL import SAC
+from algos.TQC_DCIL import TQC
 
 from demo_extractor.demo_extractor_humanoid import DemoExtractor
 from evaluate.humanoidenv.evaluate_humanoidenv import eval_trajectory_humanoid
@@ -213,14 +213,17 @@ def learn_DCIL(args, env, eval_env, path):
         if continue_training is False:
             break
 
+        ## logs
         if rollout_collection_cnt > max_rollout_collection:
-            print("nb of successfull rollouts = ", callback.callbacks[0].sum_W)
-            print("total nb of rollouts = ", callback.callbacks[0].n_runs)
+            print("------------------------------------------------------------------------------------------------------------")
+            print("| skills/")
+            print("|    nb of successfull skill-rollouts: ", callback.callbacks[0].sum_W)
+            print("|    total nb of skill-rollouts = ", callback.callbacks[0].n_runs)
             sum_W = callback.callbacks[0].sum_W
             n_runs = callback.callbacks[0].n_runs
 
-            print("skills feasibility = ", env.envs[0].skill_manager.L_skills_feasible)
-            print("overshoot feasibility = ", env.envs[0].skill_manager.L_overshoot_feasible)
+            print("|    skills feasibility = ", env.envs[0].skill_manager.L_skills_feasible)
+            print("|    overshoot feasibility = ", env.envs[0].skill_manager.L_overshoot_feasible)
 
             nb_skills_feasible = sum([int(skill_feasible) for skill_feasible in env.envs[0].skill_manager.L_skills_feasible])
             f_nb_skills_feasible.write(str(nb_skills_feasible) + "\n")
@@ -234,7 +237,7 @@ def learn_DCIL(args, env, eval_env, path):
                 ratio = 0.
 
             f_ratio.write(str(ratio) + "\n")
-            print("success ratio =  ", ratio)
+            print("|    success ratio (successful rollouts / total rollouts) =  ", ratio)
 
             traj, skills_successes = eval_trajectory_humanoid(env, eval_env, model,
                                                                         args["algo_type"],
@@ -243,10 +246,10 @@ def learn_DCIL(args, env, eval_env, path):
                                                                         False,
                                                                         video = args["video"])
 
-            print("full evaluation success = ", skills_successes)
+            print("|    skill-chaining: ", skills_successes)
             successfull_traj = skills_successes[-1]
-            print("full evaluation success = ", successful_traj)
-
+            print("|    skill-chaining success: ", successful_traj)
+            print("------------------------------------------------------------------------------------------------------------")
 
             #print("model._vec_normalize_env = ", model._vec_normalize_env.obs_rms["observation"].mean[:10])
 

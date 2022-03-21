@@ -213,7 +213,6 @@ class DemoExtractor():
 
 
 			if sum_dist > self.eps_state or i + k == len(self.L_states) - 1:
-				print("len(starting_state_set) = ", len(starting_state_set))
 				clean_states.append(self.L_states[i+k])
 				clean_inner_states.append(self.L_inner_states[i+k])
 				starting_states.append(starting_state_set)
