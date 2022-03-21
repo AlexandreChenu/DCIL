@@ -1,4 +1,4 @@
-# Divide & Conquer Imitation Algorithm (NOT TESTED YET)
+# Divide & Conquer Imitation Algorithm 
 
 
 ### Requirements
@@ -13,6 +13,9 @@
 - seaborn
 - tensorboard 
 
+Note: version details in dcil_env.yml
+
+### Dependencies for Fetch environment
 
 To run DCIL in the fetch environment, please clone Go-Explore repo:
 
