@@ -71,8 +71,10 @@ Paper available soon
 ### Understanding the visual logs (iteration_*it*.png)
 TODO 
 
-### Training example 
-
-DubinsMaze environment: 
+### Training + skill-chaining Dubins Maze
 
 ![](https://github.com/AlexandreChenu/DCIL/blob/main/media/DCIL_dubins1.gif)
+
+### Skill-chaining Fetch 
+
+![](https://github.com/AlexandreChenu/DCIL/blob/main/media/fetch_demo3_run1_fps.mp4)
