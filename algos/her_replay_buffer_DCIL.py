@@ -413,7 +413,7 @@ class HerReplayBuffer(DictReplayBuffer):
                 next_observations=next_obs,
                 dones=self.to_torch(transitions["done"]),
                 rewards=self.to_torch(self._normalize_reward(transitions["reward"], maybe_vec_env)),
-            ), transitions["info"],her_indices
+            ), transitions["info"]
         else:
             return observations, next_observations, transitions["action"], transitions["reward"]
 

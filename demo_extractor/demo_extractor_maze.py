@@ -14,6 +14,8 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
+from stable_baselines3.common.env_util import make_vec_env
+
 class DemoExtractor():
 	"""
 	Object in charge of extracting skills from the expert demonstration
@@ -122,7 +124,7 @@ class DemoExtractor():
 		return clean_states, clean_inner_states, L_budgets
 
 
-	def get_env(self):
+	def get_env(self, vec_env=False, n_envs=1):
 		"""
 		Create environment including skill manager
 		"""
@@ -130,12 +132,20 @@ class DemoExtractor():
 
 		if "MazeEnv" in self.env_name:
 			print("self.env_name = ", self.env_name)
-			env = gym.make(self.env_name, L_full_demonstration = self.L_full_demonstration,
-										  L_states = self.L_states,
-										  L_goals = self.L_goals,
-										  L_inner_states = self.L_inner_states,
-										  L_budgets = self.L_budgets, mazesize = self.env_args["mazesize"], do_overshoot = self.env_args["do_overshoot"])
-
+			if not vec_env:
+				env = gym.make(self.env_name, L_full_demonstration = self.L_full_demonstration,
+											  L_states = self.L_states,
+											  L_goals = self.L_goals,
+											  L_inner_states = self.L_inner_states,
+											  L_budgets = self.L_budgets, mazesize = self.env_args["mazesize"], do_overshoot = self.env_args["do_overshoot"])
+			else:
+				env = make_vec_env(self.env_name, n_envs = n_envs, env_kwargs = {"L_full_demonstration":self.L_full_demonstration,
+																			"L_states":self.L_states,
+							  											  	"L_goals":self.L_goals,
+							  											  	"L_inner_states":self.L_inner_states,
+							  											  	"L_budgets":self.L_budgets,
+																			"mazesize":self.env_args["mazesize"],
+																			"do_overshoot":self.env_args["do_overshoot"]})
 		return env
 
 	def project_to_goal_space(self, state, default = False):

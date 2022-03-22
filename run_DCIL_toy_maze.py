@@ -70,12 +70,12 @@ def learn_GGI(args, env, eval_env, path):
                     learning_rate = 1e-3, replay_buffer_class=HerReplayBuffer,
         # Parameters for HER
         replay_buffer_kwargs=dict(
-        n_sampled_goal=4,
+        n_sampled_goal=2,
         goal_selection_strategy=goal_selection_strategy,
         online_sampling=online_sampling,
         max_episode_length=max_episode_length,
         ),
-        ent_coef= 0.1,
+        ent_coef= 0.2,
         policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300]),
         warmup_duration=100,
         verbose=1, path=path, make_logs = False,

@@ -12,6 +12,8 @@ import argparse
 import gym
 import matplotlib.pyplot as plt
 
+from stable_baselines3.common.env_util import make_vec_env
+
 import numpy as np
 
 class DemoExtractor():
@@ -269,22 +271,36 @@ class DemoExtractor():
 		return clean_states, clean_inner_states, starting_states, starting_inner_states, L_full_observations, L_actions, L_budgets
 
 
-	def get_env(self):
+	def get_env(self, vec_env = False):
 		"""
 		Create environment
 		"""
 		print("self.env_name = ", self.env_name)
 		if "FetchEnv" in self.env_name:
-			env = gym.make(self.env_name, L_full_demonstration = self.L_full_demonstration,
-										  L_full_inner_demonstration = self.L_full_inner_demonstration,
-										  L_states = self.L_states,
-										  starting_states = self.starting_states,
-										  starting_inner_states = self.starting_inner_states,
-										  L_actions = self.L_actions,
-										  L_full_observations = self.L_full_observations,
-										  L_goals = self.L_goals,
-										  L_inner_states = self.L_inner_states,
-										  L_budgets = self.L_budgets,  env_option = self.env_option, do_overshoot = self.env_args["do_overshoot"])
+			if not vec_env:
+				env = gym.make(self.env_name, L_full_demonstration = self.L_full_demonstration,
+											  L_full_inner_demonstration = self.L_full_inner_demonstration,
+											  L_states = self.L_states,
+											  starting_states = self.starting_states,
+											  starting_inner_states = self.starting_inner_states,
+											  L_actions = self.L_actions,
+											  L_full_observations = self.L_full_observations,
+											  L_goals = self.L_goals,
+											  L_inner_states = self.L_inner_states,
+											  L_budgets = self.L_budgets,  env_option = self.env_option, do_overshoot = self.env_args["do_overshoot"])
+			else:
+				env = make_vec_env(self.env_name, n_envs = 6, env_kwargs = {"L_full_demonstration":self.L_full_demonstration,
+																			"L_full_inner_demonstration":self.L_full_inner_demonstration,
+																			"L_states":self.L_states,
+							  											  	"starting_states": self.starting_states,
+							  											  	"starting_inner_states":self.starting_inner_states,
+							  											  	"L_actions":self.L_actions,
+							  											  	"L_full_observations":self.L_full_observations,
+							  											  	"L_goals":self.L_goals,
+							  											  	"L_inner_states":self.L_inner_states,
+							  											  	"L_budgets":self.L_budgets,
+																			"env_option":self.env_option,
+																			"do_overshoot":self.env_args["do_overshoot"]})
 
 		return env
 

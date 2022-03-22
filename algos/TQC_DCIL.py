@@ -213,7 +213,7 @@ class TQC(OffPolicyAlgorithm):
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
             # replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
-            replay_data, infos, her_indices= self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
+            replay_data, infos= self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 
             ## R \in {0,1}
             diff_reward_done = replay_data.dones - replay_data.rewards/self.max_reward
@@ -251,7 +251,7 @@ class TQC(OffPolicyAlgorithm):
                         overshoot_goal.append([0])
 
                 # print("replay_data.rewards[-10:] = ", replay_data.rewards[-10:])
-                transformed_rewards = self._transform_rewards(replay_data, batch_size, infos, desired_goals, next_desired_goals, her_indices, overshoot_goal)
+                transformed_rewards = self._transform_rewards(replay_data, batch_size, infos, desired_goals, next_desired_goals,overshoot_goal)
                 transformed_rewards = transformed_rewards.detach()
                 # print("transformed_rewards[-10:] = ", transformed_rewards[-10:])
 
@@ -344,7 +344,7 @@ class TQC(OffPolicyAlgorithm):
         if len(ent_coef_losses) > 0:
             self.logger.record("train/ent_coef_loss", np.mean(ent_coef_losses))
 
-    def _transform_rewards(self, replay_data, batch_size, infos, true_desired_goals, shift_desired_goals, her_indices, overshoot_goal):
+    def _transform_rewards(self, replay_data, batch_size, infos, true_desired_goals, shift_desired_goals, overshoot_goal):
 
         rewards = copy.deepcopy(replay_data.rewards)
         # print("rewards.shape = ", rewards.shape)

@@ -62,6 +62,7 @@ class LogCallbackMazeEnv(BaseCallback):
         self.algo_type = algo_type
 
         if self.algo_type == "OffPolicyAlgorithm":
+            # self.freq_rollout_display = 1000
             self.freq_rollout_display = 1000
             # self.freq_rollout_display = 100
             self.freq_eval_adapted_traj = 50
@@ -250,7 +251,8 @@ class LogCallbackFetchEnv(BaseCallback):
         self.trajs = []
         self.traj = []
         self.success_trajs = []
-        self.nb_rollout = 0
+        self.nb_steps = 0
+        self.total_nb_steps = 0
         self.sum_W = 0
         self.n_runs = 0
         self.path = path
@@ -277,6 +279,9 @@ class LogCallbackFetchEnv(BaseCallback):
         eval_env = self.locals["eval_env"]
         env = self.locals["env"]
 
+        self.nb_steps += 1
+        self.total_nb_steps += 1
+
         if info['done']:
             if info['target_reached']:
                 self.sum_W += 1
@@ -293,16 +298,14 @@ class LogCallbackFetchEnv(BaseCallback):
         After running a collect_rollouts for nb_steps timesteps.
         """
 
-        self.nb_rollout += 1
-
         ## extract eval env
         eval_env = self.locals["eval_env"]
         env = self.locals["env"]
 
-        if self.nb_rollout % self.freq_rollout_display == 0:
+        if self.nb_steps > self.freq_rollout_display :
 
             ## eval full trajectory
-            eval_traj,_,_ = eval_trajectory_fetchenv(env, eval_env, self.model, self.algo_type, self.path, self.nb_rollout, False, video=self.video)
+            eval_traj,_,_ = eval_trajectory_fetchenv(env, eval_env, self.model, self.algo_type, self.path, self.total_nb_steps, False, video=self.video)
             ## eval each individual skill
             eval_skills = eval_skills_fetchenv(env, eval_env, self.model, self.algo_type)
 
@@ -311,6 +314,8 @@ class LogCallbackFetchEnv(BaseCallback):
 
             self.trajs = []
             self.success_trajs = []
+
+            self.nb_steps = 0
 
         return True
 
@@ -436,7 +441,7 @@ class LogCallbackFetchEnv(BaseCallback):
         ## plot 4 different orientation
         for azim_ in range(45,360,90):
             ax.view_init(azim = azim_)
-            plt.savefig(self.path + "/iteration_" + str(azim_) + "_" + str(self.nb_rollout)+ ".png")
+            plt.savefig(self.path + "/iteration_" + str(azim_) + "_" + str(self.total_nb_steps)+ ".png")
             #for elev_ in [0,90]:
             #    ax.view_init(azim = azim_, elev=elev_)
             #    plt.savefig(self.path + "/iteration_" + str(azim_) + "_" + str(elev_) + "_" + str(self.nb_rollout)+ ".png")

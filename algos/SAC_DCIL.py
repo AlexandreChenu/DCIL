@@ -174,7 +174,7 @@ class SAC(OffPolicyAlgorithm):
         ## params for reward bonus
         self.eps_tolerance = 0.03 ## for relabelling close to actual goals
         self.add_bonus_reward = bonus_reward_bool
-        self.warmup_duration = learning_starts ## number of training steps before adding the bonus
+        self.warmup_duration = 1 ## number of training steps before adding the bonus
         self.alpha_bonus = alpha_bonus
         self.max_reward = self.env.envs[0].max_reward
 
@@ -265,7 +265,7 @@ class SAC(OffPolicyAlgorithm):
 
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
-            replay_data, infos, her_indices =  self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
+            replay_data, infos =  self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 
             ## R \in {0,1}
             diff_reward_done = replay_data.dones - replay_data.rewards/self.max_reward
@@ -290,7 +290,8 @@ class SAC(OffPolicyAlgorithm):
                 overshoot_goal = []
                 desired_goals = []
                 next_desired_goals = []
-                for info in infos:
+
+                for i, info in enumerate(infos):
                     desired_goals.append(list(self.env.envs[0].project_to_goal_space(self.env.envs[0].skill_manager.get_goal_state(info[0]["goal_indx"]))))
 
                     next_goal_indx = info[0]["goal_indx"]+1
@@ -304,8 +305,7 @@ class SAC(OffPolicyAlgorithm):
                     else:
                         overshoot_goal.append([0])
 
-
-                transformed_rewards = self._transform_rewards(replay_data,  infos, desired_goals, next_desired_goals, her_indices, overshoot_goal)
+                transformed_rewards = self._transform_rewards(replay_data,  infos, replay_data.next_observations, desired_goals,  next_desired_goals, overshoot_goal)
                 transformed_rewards = transformed_rewards.detach()
 
             else:
@@ -446,16 +446,25 @@ class SAC(OffPolicyAlgorithm):
 
 
 
-    def _transform_rewards(self, replay_data, infos, true_desired_goals, shift_desired_goals, her_indices, overshoot_goal):
+    def _transform_rewards(self, replay_data, infos, next_obs, true_desired_goals, shift_desired_goals, overshoot_goal):
 
         rewards = copy.deepcopy(replay_data.rewards)
 
-        next_observations = copy.deepcopy(replay_data.next_observations) ## includes n-step observation
+        # for i in range(210, 256):
+        #     # print(replay_data.rewards[i])
+        #     if replay_data.rewards[i]==self.max_reward:
+        #         print("obs = ", replay_data.observations["observation"][i])
+        #         print("next obs = ", replay_data.next_observations["observation"][i])
+        #         print("info['terminal_observation'] = ", infos[i][0]["terminal_observation"])
+
+        # next_observations = copy.deepcopy(replay_data.next_observations) ## includes n-step observation
+        next_observations = copy.deepcopy(next_obs)
 
         # print("next observation = ", replay_data.next_observations["observation"][0])
         # print("achieved_goal = ", replay_data.next_observations["achieved_goal"][0])
         ## shift desired goal to compute reward bonus
-        next_observations_shift_desired_goal = copy.deepcopy(replay_data.next_observations)
+        # next_observations_shift_desired_goal = copy.deepcopy(replay_data.next_observations)
+        next_observations_shift_desired_goal = copy.deepcopy(next_obs)
         next_observations_shift_desired_goal["observation"] = next_observations_shift_desired_goal["observation"].cpu().numpy()
         next_observations_shift_desired_goal["achieved_goal"] = next_observations_shift_desired_goal["achieved_goal"].cpu().numpy()
         next_observations_shift_desired_goal["desired_goal"] = next_observations_shift_desired_goal["desired_goal"].cpu().numpy()

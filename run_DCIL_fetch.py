@@ -149,6 +149,8 @@ def learn_DCIL(args, env, eval_env, path):
                                         ent_coef=0.001,
                                         # policy_kwargs = dict(log_std_init=-3, net_arch=[512, 512, 512]),
                                         policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300]),
+                                        train_freq = (1, "episode"),
+                                        gradient_steps= -1,
                                         verbose=1,
                                         path = path,
                                         device= device,
