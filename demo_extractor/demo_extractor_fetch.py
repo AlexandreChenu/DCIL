@@ -28,7 +28,6 @@ class DemoExtractor():
 		self.env_args = env_args
 		self.env_option = self.env_args["env_option"]
 
-
 		self.verbose = verbose
 
 		self.eps_state = eps_state ## threshold used for cleaning the trajectory and creating tasks
@@ -197,7 +196,7 @@ class DemoExtractor():
 			starting_inner_state_set = [self.L_inner_states[i]]
 			# cumulative distance
 			while sum_dist <= self.eps_state and i + k < len(self.L_states) - 1:
-				sum_dist += self.compute_distance_in_goal_space(self.project_to_goal_space(self.L_states[i+k]), self.project_to_goal_space(self.L_states[i+k-1]))
+				sum_dist += self.compute_distance_in_goal_space(self.project_to_goal_space(self.L_states[i+k], default=True), self.project_to_goal_space(self.L_states[i+k-1], default=True))
 
 				# starting_state_set.append(self.L_states[i+k])
 				# starting_inner_state_set.append(self.L_inner_states[i+k])
