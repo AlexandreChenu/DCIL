@@ -133,21 +133,21 @@ def learn_DCIL(args, env, eval_env, path):
 
         model = TQC("MultiInputPolicy", env,
                                         learning_rate = args["lr"],
-                                        #gamma = 0.95,
+                                        gamma = 0.95,
                                         #batch_size = 1024,
-                                        gamma = 0.99,
+                                        #gamma = 0.99,
                                         batch_size = 256,
                                         learning_starts = 1000,
                                         replay_buffer_class=HerReplayBuffer,
                                         # Parameters for HER
                                         replay_buffer_kwargs=dict(
-                                        n_sampled_goal=4,
+                                        n_sampled_goal=2,
                                         goal_selection_strategy=goal_selection_strategy,
                                         online_sampling=online_sampling,
                                         max_episode_length=max_episode_length,
                                         ),
-                                        ent_coef=0.001,
-                                        # policy_kwargs = dict(log_std_init=-3, net_arch=[512, 512, 512]),
+                                        ent_coef=0.005,
+                                        #policy_kwargs = dict(log_std_init=-3, net_arch=[512, 512, 512]),
                                         policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300]),
                                         train_freq = (1, "episode"),
                                         gradient_steps= -1,
@@ -175,7 +175,7 @@ def learn_DCIL(args, env, eval_env, path):
     f_nb_skill_succeeded = open(path + "/nb_skill_succeeded.txt", "w")
     f_nb_skills_feasible = open(path + "/nb_skills_feasible.txt", "w")
 
-    max_rollout_collection = 200
+    max_rollout_collection = 200 / 10
     last_episode_num = 0
     rollout_collection_cnt = 0
     timesteps_cnt = 0
@@ -251,7 +251,7 @@ def learn_DCIL(args, env, eval_env, path):
             eval_traj, skills_successes, rewards = eval_trajectory_fetchenv(env, eval_env, model,
                                                                         args["algo_type"],
                                                                         callback.callbacks[0].path,
-                                                                        callback.callbacks[0].nb_rollout,
+                                                                        callback.callbacks[0].total_nb_steps,
                                                                         False,
                                                                         video = args["video"])
 
@@ -277,7 +277,7 @@ def learn_DCIL(args, env, eval_env, path):
                                                             model,
                                                             args["algo_type"],
                                                             callback.callbacks[0].path,
-                                                            callback.callbacks[0].nb_rollout,
+                                                            callback.callbacks[0].total_nb_steps,
                                                             True,
                                                             video = args["video"])
 
@@ -391,7 +391,7 @@ if __name__ == '__main__':
     # args["eps_optimizer"] = float(parsed_args.eps_optimizer)
     # args["alpha_ent"] = float(parsed_args.alpha_ent)
     args["video"] = False
-    args["total_timesteps"] = 200000 #600000
+    args["total_timesteps"] = 500000 #600000
     args["lr"] = float(parsed_args.l)
     args["add_ent_reg"] = bool(int(parsed_args.ent_reg_bool))
 
