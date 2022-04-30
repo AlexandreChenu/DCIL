@@ -98,7 +98,7 @@ class LogCallbackMazeEnv(BaseCallback):
 
             eval_traj, successful_traj, max_zone = eval_trajectory_mazeenv(env, eval_env, self.model, self.algo_type)
             self.eval_trajs.append(eval_traj)
-            self._visu_trajectories(env, eval_env, [], self.trajs, [])
+            self._visu_trajectories(env, eval_env, [eval_traj], self.trajs, [])
             self._visu_V()
             self.eval_trajs = []
             self.trajs = []

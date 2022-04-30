@@ -78,7 +78,7 @@ def learn_DCIL(args, env, eval_env, path):
                                         online_sampling=online_sampling,
                                         max_episode_length=max_episode_length,
                                         ),
-                                        ent_coef=0.2,
+                                        ent_coef=0.1,
                                         policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300]),
                                         warmup_duration=100,
                                         verbose=1, path=path, make_logs = False,
@@ -190,7 +190,7 @@ def learn_DCIL(args, env, eval_env, path):
             ## evaluate chaining of skills
             eval_traj, skills_successes, max_zone = eval_trajectory_mazeenv(env, eval_env, model, args["algo_type"])
             print("|    skill-chaining: ", skills_successes)
-            successfull_traj = skills_successes[-1]
+            successful_traj = skills_successes[-1]
             print("|    skill-chaining success: ", successful_traj)
             print("------------------------------------------------------------------------------------------------------------")
 
