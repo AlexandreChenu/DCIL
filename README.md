@@ -74,7 +74,8 @@ python run_DCIL_fetch.py --eps_dist 0.5 --algo SAC_HER --env FetchEnv_full -l 0.
 ```
 
 ### How does it work
-Paper available soon
+
+[Paper](https://arxiv.org/abs/2204.07404)
 
 ### Training + skill-chaining Dubins Maze
 
