@@ -63,7 +63,7 @@ class LogCallbackMazeEnv(BaseCallback):
 
         if self.algo_type == "OffPolicyAlgorithm":
             # self.freq_rollout_display = 1000
-            self.freq_rollout_display = 1000
+            self.freq_rollout_display = 2000
             # self.freq_rollout_display = 100
             self.freq_eval_adapted_traj = 50
         else:
