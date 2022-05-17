@@ -78,10 +78,10 @@ def learn_DCIL(args, env, eval_env, path):
                                         online_sampling=online_sampling,
                                         max_episode_length=max_episode_length,
                                         ),
-                                        ent_coef=0.2,
+                                        ent_coef=0.01,
                                         policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300]),
                                         warmup_duration=100,
-                                        verbose=1, path=path, make_logs = False,
+                                        verbose=1, path=path, make_logs = True,
                                         bonus_reward_bool = args["bonus_reward_bool"],
                                         add_ent_reg_critic = args["add_ent_reg"],
                                         alpha_bonus = 1.,
@@ -190,7 +190,7 @@ def learn_DCIL(args, env, eval_env, path):
             ## evaluate chaining of skills
             eval_traj, skills_successes, max_zone = eval_trajectory_mazeenv(env, eval_env, model, args["algo_type"])
             print("|    skill-chaining: ", skills_successes)
-            successfull_traj = skills_successes[-1]
+            successful_traj = skills_successes[-1]
             print("|    skill-chaining success: ", successful_traj)
             print("------------------------------------------------------------------------------------------------------------")
 
@@ -260,7 +260,7 @@ if __name__ == '__main__':
     args["add_ent_reg"] = bool(int(parsed_args.add_ent_reg))
     # args["demo_filename"] = args["demo_directory"] + "/" + str(np.random.randint(1,21)) + ".demo"
     args["demo_filename"] = args["demo_directory"] + "/" + str(args["demo_indx"]) + ".demo"
-    args["total_timesteps"] = 200000
+    args["total_timesteps"] = 100000
 
 
     if "DDPG" in args["RL_algo"] or "SAC" in args["RL_algo"] or "TD3" in args["RL_algo"]:
