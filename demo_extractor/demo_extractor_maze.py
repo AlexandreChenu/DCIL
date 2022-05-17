@@ -117,7 +117,7 @@ class DemoExtractor():
 				clean_states.append(self.L_states[i+k])
 				clean_inner_states.append(self.L_inner_states[i+k])
 
-			L_budgets.append(int(self.beta*k))
+			L_budgets.append(int(self.beta*k))#L_budgets.append(int(30)) #L_budgets.append(int(self.beta*k))
 
 			i = i + k
 

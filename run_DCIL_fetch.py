@@ -175,7 +175,7 @@ def learn_DCIL(args, env, eval_env, path):
     f_nb_skill_succeeded = open(path + "/nb_skill_succeeded.txt", "w")
     f_nb_skills_feasible = open(path + "/nb_skills_feasible.txt", "w")
 
-    max_rollout_collection = 200 / 10
+    max_rollout_collection = 200 #/ 10
     last_episode_num = 0
     rollout_collection_cnt = 0
     timesteps_cnt = 0
@@ -360,8 +360,8 @@ if __name__ == '__main__':
     parser.add_argument('--demo_path', help='path to demo file')
     parser.add_argument('--bonus_bool', help='add bonus reward')
     parser.add_argument('--overshoot_bool', help='overshoot if success yes(1) no(0)')
-    # parser.add_argument('--eps_optimizer', help='epsilon for adam optimizer')
-    # parser.add_argument('--alpha_ent', help='temperature coefficient for entropy regularization')
+    parser.add_argument('--eps_optimizer', help='epsilon for adam optimizer')
+    parser.add_argument('--alpha_ent', help='temperature coefficient for entropy regularization')
     parser.add_argument('-l', help='learning rate')
     parser.add_argument('-x', help='demo indx')
     parser.add_argument('--ent_reg_bool', help='add entropy regularization term for critic update')
