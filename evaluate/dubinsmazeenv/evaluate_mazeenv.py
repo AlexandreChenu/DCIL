@@ -43,7 +43,7 @@ def eval_trajectory_mazeenv(env, eval_env, model, algo_type):
         for i_step in range(0,eval_env.max_steps):
 
             ## Warning: depends on the algorithm
-            obs = eval_env._get_obs()
+            obs = eval_env.get_obs()
             new_zone = eval_zone(obs["observation"])
             if new_zone > max_zone:
                 max_zone = new_zone

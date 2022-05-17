@@ -63,7 +63,7 @@ class LogCallbackMazeEnv(BaseCallback):
 
         if self.algo_type == "OffPolicyAlgorithm":
             # self.freq_rollout_display = 1000
-            self.freq_rollout_display = 1000
+            self.freq_rollout_display = 1000 / 3
             # self.freq_rollout_display = 100
             self.freq_eval_adapted_traj = 50
         else:
@@ -190,7 +190,7 @@ class LogCallbackMazeEnv(BaseCallback):
         values = []
 
         for theta in list(s_theta):
-            obs = eval_env._get_obs()
+            obs = eval_env.get_obs()
             #print("action = ", action)
             obs["observation"][0] = state[0]
             obs["observation"][1] = state[1]
@@ -534,7 +534,7 @@ class LogCallbackFetchEnv(BaseCallback):
 
         # for state, action in zip(L_states, L_actions):
         for i in range(len(L_states)-1):
-            obs = eval_env._get_obs()
+            obs = eval_env.get_obs()
             #print("action = ", action)
             obs["observation"][:] = L_states[i][:]
             obs["achieved_goal"] = eval_env.project_to_goal_space(L_states[i])
