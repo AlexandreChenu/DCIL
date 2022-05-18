@@ -282,7 +282,7 @@ if __name__ == '__main__':
 	dir_path = cur_path + "/xp/DCIL_" + args["env_name"] + "_" + args["RL_algo"] + "_" + str(args["bonus_reward_bool"]) + "_" + str(args["do_overshoot"]) + "_" + str(args["demo_indx"]) + "_" + dt_string
 
 	try:
-		os.mkdir(dir_path,0777)
+		os.mkdir(dir_path)
 	except OSError:
 		print ("Creation of the directory %s failed" % dir_path)
 	else:

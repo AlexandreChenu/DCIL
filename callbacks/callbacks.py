@@ -63,7 +63,7 @@ class LogCallbackMazeEnv(BaseCallback):
 
 		if self.algo_type == "OffPolicyAlgorithm":
 			# self.freq_rollout_display = 1000
-			self.freq_rollout_display = 250
+			self.freq_rollout_display = 250 #1000
 			# self.freq_rollout_display = 100
 			self.freq_eval_adapted_traj = 50
 		else:
@@ -203,7 +203,8 @@ class LogCallbackMazeEnv(BaseCallback):
 			obs["observation"] = np.array([obs["observation"]])
 			obs["desired_goal"] = np.array([obs["desired_goal"]])
 			obs["achieved_goal"] = np.array([obs["achieved_goal"]])
-			obs = env.normalize_obs(obs)
+			if hasattr(env, "normalize_obs"):
+				obs = env.normalize_obs(obs)
 			####
 
 			obs["observation"] = torch.FloatTensor(obs["observation"]).to(device)
