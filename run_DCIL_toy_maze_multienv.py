@@ -259,11 +259,13 @@ if __name__ == '__main__':
     parser.add_argument('--algo', help='RL algo')
     parser.add_argument('--add_bonus', help='add bonus reward')
     parser.add_argument('--add_ent_reg', help='add entropy regularization for critic')
+	parser.add_argument('--num_envs', help='number of parallel envs')
     parsed_args = parser.parse_args()
 
     args = {}
     args["bonus_reward_bool"] = bool(int(parsed_args.add_bonus))
     args["add_ent_reg"] = bool(int(parsed_args.add_ent_reg))
+	args["n_envs"] = int(parsed_args.num_envs)
 
     args["eps_dist"] = 1.2
     args["success_dist"] = 0.2
@@ -279,7 +281,7 @@ if __name__ == '__main__':
     args["gamma"] = 0.99
     args["alpha"] = 0.1
     args["total_timesteps"] = 35000
-    args["n_envs"] = 4
+    # args["n_envs"] = 1
 
 
     if "DDPG" in args["RL_algo"] or "SAC" in args["RL_algo"] or "TD3" in args["RL_algo"] or "TQC" in args["RL_algo"]:
