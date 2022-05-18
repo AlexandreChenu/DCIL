@@ -78,13 +78,13 @@ def learn_DCIL(args, env, eval_env, path):
 										online_sampling=online_sampling,
 										#max_episode_length=max_episode_length,
 										),
-										ent_coef=0.2,
+										ent_coef=0.01,
 										policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300]),
 										train_freq= 1,
-										gradient_steps = env.replay_buffer.n_envs,
+										gradient_steps = env.num_envs,
 										# warmup_duration=1000,
 										verbose=1,
-										#path=path, make_logs = False,
+										path=path, #make_logs = False,
 										#bonus_reward_bool = args["bonus_reward_bool"],
 										#add_ent_reg_critic = args["add_ent_reg"],
 										#alpha_bonus = 1.,
@@ -115,7 +115,7 @@ def learn_DCIL(args, env, eval_env, path):
 										online_sampling=online_sampling,
 										max_episode_length=max_episode_length,
 										),
-										ent_coef=0.1,
+										ent_coef=0.01,
 										policy_kwargs = dict(log_std_init=-3, net_arch=[400,300]),
 										#policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300], optimizer_class=torch.optim.RMSprop, optimizer_kwargs=dict(eps=args["eps_optimizer"])),
 										verbose=1,
@@ -282,7 +282,7 @@ if __name__ == '__main__':
 	dir_path = cur_path + "/xp/DCIL_" + args["env_name"] + "_" + args["RL_algo"] + "_" + str(args["bonus_reward_bool"]) + "_" + str(args["do_overshoot"]) + "_" + str(args["demo_indx"]) + "_" + dt_string
 
 	try:
-		os.mkdir(dir_path)
+		os.mkdir(dir_path,0777)
 	except OSError:
 		print ("Creation of the directory %s failed" % dir_path)
 	else:
@@ -306,7 +306,7 @@ if __name__ == '__main__':
 	demo_extractor.visu_demonstration()
 
 	## create environment
-	env = demo_extractor.get_env(vec_env=True,n_envs=3)
+	env = demo_extractor.get_env(vec_env=True,n_envs=1)
 	# assert len(env.skill_manager.L_inner_states) == len(env.skill_manager.L_states)
 	# assert len(env.skill_manager.starting_state_set) == len(env.skill_manager.L_states)
 	# env = DummyVecEnv([lambda: env])

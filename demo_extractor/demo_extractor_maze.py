@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecEnv
+
 
 class DemoExtractor():
 	"""
@@ -145,7 +147,7 @@ class DemoExtractor():
 							  											  	"L_inner_states":self.L_inner_states,
 							  											  	"L_budgets":self.L_budgets,
 																			"mazesize":self.env_args["mazesize"],
-																			"do_overshoot":self.env_args["do_overshoot"]})
+																			"do_overshoot":self.env_args["do_overshoot"]}, vec_env_cls=SubprocVecEnv)
 		return env
 
 	def project_to_goal_space(self, state, default = False):

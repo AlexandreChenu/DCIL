@@ -52,7 +52,8 @@ class DubinsMazeEnvGCPHERSB3(DubinsMazeEnv):
 
 
         # Max steps per episode and counter
-        self.max_steps = args['max_steps']
+        # self.max_steps = args['max_steps']
+        self.max_episode_steps = 20
         self.rollout_steps = 0
 
         # Action space and observation space
@@ -126,7 +127,6 @@ class DubinsMazeEnvGCPHERSB3(DubinsMazeEnv):
 
         ### tensor of goals
         else:
-
             distances = self.compute_distance_in_goal_space(achieved_goal, desired_goal)
             distances_mask = (distances <= self.width_success).astype(np.float32)
 
@@ -254,7 +254,7 @@ class DubinsMazeEnvGCPHERSB3(DubinsMazeEnv):
     def get_state(self):
         return self.state
 
-    def _get_obs(self):
+    def get_obs(self):
 
         state = self.get_state()
         achieved_goal = self.project_to_goal_space(state)
