@@ -1,6 +1,9 @@
 import gym
 from gym.envs.registration import register
 
+# simple maze environment
+from .simple_mazeenv.mazeenv_cst_speed_wrappers import SimpleMazeEnvGCPHERSB3
+
 # dubins maze environment
 from .dubins_mazeenv.mazeenv_cst_speed_wrappers import DubinsMazeEnvGCPHERSB3
 
@@ -8,6 +11,11 @@ from .dubins_mazeenv.mazeenv_cst_speed_wrappers import DubinsMazeEnvGCPHERSB3
 from .fetchenv.fetch_env import MyComplexFetchEnv
 from .fetchenv.fetchenv_wrappers import ComplexFetchEnvGCPHERSB3
 
+print("REGISTERING SimpleMazeEnv")
+register(
+    id='SimpleMazeEnvGCPHERSB3-v0',
+    # entry_point='envs.dubins_mazeenv.mazeenv_wrappers:DubinsMazeEnvGCPHERSB3')
+    entry_point='envs.simple_mazeenv.mazeenv_cst_speed_wrappers:SimpleMazeEnvGCPHERSB3')
 
 ## mazeenv from Guillaume Matheron with a Dubins car
 print("REGISTERING DubinsMazeEnv")

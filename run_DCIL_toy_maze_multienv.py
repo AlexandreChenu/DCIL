@@ -26,14 +26,14 @@ from torch.autograd import Variable
 import torch.utils.data as Data
 
 
-from stable_baselines3 import HerReplayBuffer, SAC # PPO, DDPG, TD3#, SAC, TD3
+from stable_baselines3 import HerReplayBuffer#, SAC # PPO, DDPG, TD3#, SAC, TD3
 from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
 from stable_baselines3.common.utils import safe_mean
 from stable_baselines3.common.buffers import DictRolloutBuffer
 
-# from algos.SAC_DCIL import SAC
+from algos.SAC_DCIL import SAC
 # from algos.TQC_DCIL import TQC
 from demo_extractor.demo_extractor_maze import DemoExtractor
 from evaluate.dubinsmazeenv.evaluate_mazeenv import eval_trajectory_mazeenv
@@ -68,6 +68,27 @@ def learn_GGI(args, env, eval_env, path):
 		max_episode_length = 50
 		##### Warning: should it be fixed or can it be variable
 
+		# model = SAC("MultiInputPolicy", env, #eval_env.L_states, eval_env.L_steps,
+		# 			learning_rate = 1e-3, replay_buffer_class=HerReplayBuffer,
+		# 			# Parameters for HER
+		# 			replay_buffer_kwargs=dict(
+		# 			n_sampled_goal=2,
+		# 			goal_selection_strategy=goal_selection_strategy,
+		# 			online_sampling=online_sampling,
+		# 			# max_episode_length=max_episode_length
+		# 			),
+		# 			ent_coef= 0.1,
+		# 			policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300]),
+		# 			train_freq= 1,
+		# 			gradient_steps = env.num_envs,
+		# 			# warmup_duration=100,
+		# 			verbose=1,path=path,# make_logs = False,
+		# 			eval_env = eval_env,
+		# 			add_bonus_reward = args["bonus_reward_bool"],
+		# 			# add_ent_reg_critic = args["add_ent_reg"],
+		# 			# alpha_bonus = 0.1,
+		# 			device= device)
+
 		model = SAC("MultiInputPolicy", env, #eval_env.L_states, eval_env.L_steps,
 					learning_rate = 1e-3, replay_buffer_class=HerReplayBuffer,
 					# Parameters for HER
@@ -75,18 +96,18 @@ def learn_GGI(args, env, eval_env, path):
 					n_sampled_goal=2,
 					goal_selection_strategy=goal_selection_strategy,
 					online_sampling=online_sampling,
-					# max_episode_length=max_episode_length
+					max_episode_length=max_episode_length
 					),
 					ent_coef= 0.1,
 					policy_kwargs = dict(log_std_init=-3, net_arch=[400, 300]),
 					train_freq= 1,
 					gradient_steps = env.num_envs,
-					# warmup_duration=100,
-					verbose=1,path=path,# make_logs = False,
-					eval_env = eval_env,
-					add_bonus_reward = args["bonus_reward_bool"],
-					# add_ent_reg_critic = args["add_ent_reg"],
-					# alpha_bonus = 0.1,
+					warmup_duration=1,
+					verbose=1,path=path, make_logs = False,
+					# eval_env = eval_env,
+					bonus_reward_bool = args["bonus_reward_bool"],
+					add_ent_reg_critic = args["add_ent_reg"],
+					alpha_bonus = 0.1,
 					device= device)
 
 	if args["RL_algo"] == "TQC_HER":
@@ -327,7 +348,7 @@ if __name__ == '__main__':
 	L_inner_states = copy.deepcopy(L_states)
 	L_budgets = [20,20]
 
-	vec_env = True
+	vec_env = False
 	## create environment
 	if vec_env == False:
 		env = gym.make(env_name, L_full_demonstration = L_full_demonstration,
@@ -348,7 +369,7 @@ if __name__ == '__main__':
 
 
 
-	# env = DummyVecEnv([lambda: env])
+	env = DummyVecEnv([lambda: env])
 	# env = SubprocVecEnv([lambda: env])
 	env = VecNormalize(env, norm_obs=True, norm_reward=False, clip_obs=np.inf)
 	env = VecMonitor(env)

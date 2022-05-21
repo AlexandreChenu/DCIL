@@ -20,7 +20,7 @@ from .skill_manager_mazeenv import *
 import pdb
 
 
-class DubinsMazeEnvGCPHERSB3(DubinsMazeEnv):
+class SimpleMazeEnvGCPHERSB3(SimpleMazeEnv):
 
 	def __init__(self, L_full_demonstration,
 						L_states,
@@ -39,7 +39,7 @@ class DubinsMazeEnvGCPHERSB3(DubinsMazeEnv):
 				'width': 0.1
 			}
 
-		super(DubinsMazeEnvGCPHERSB3,self).__init__(args = args)
+		super(SimpleMazeEnvGCPHERSB3,self).__init__(args = args)
 
 		## init the skill manager
 		self.skill_manager = SkillsManager(L_full_demonstration,
@@ -57,14 +57,14 @@ class DubinsMazeEnvGCPHERSB3(DubinsMazeEnv):
 		self.rollout_steps = 0
 
 		# Action space and observation space
-		self.action_space = spaces.Box(np.array([-1.]), np.array([1.]), dtype = np.float32)
+		self.action_space = spaces.Box(np.array([-1., -1.]), np.array([1.,1.]), dtype = np.float32)
 		ms = int(args['mazesize'])
 
 		self.observation_space = spaces.Dict(
 				{
 					"observation": spaces.Box(
-						low = np.array([0,0,-4]),
-						high = np.array([ms,ms,4])),
+						low = np.array([0,0]),
+						high = np.array([ms,ms])),
 					"achieved_goal": spaces.Box(
 						low = np.array([0,0]),
 						high = np.array([ms,ms])),
@@ -74,7 +74,7 @@ class DubinsMazeEnvGCPHERSB3(DubinsMazeEnv):
 				}
 			)
 
-		self.state =  np.array([0.5, 0.5, 0.])
+		self.state =  np.array([0.5, 0.5])
 		self.goal= np.array([args['mazesize']-0.5, args['mazesize']-0.5])
 
 		self.traj = []
@@ -120,139 +120,20 @@ class DubinsMazeEnvGCPHERSB3(DubinsMazeEnv):
 
 			_info = {'reward_boolean': dst<= self.width_success}
 
-			# if _info['reward_boolean']:
-			# 	return self.max_reward
-			# else:
-			# 	return 0.
-
 			if _info['reward_boolean']:
-				return 0.
+				return self.max_reward
 			else:
-				return -1.
+				return 0.
 
 		### tensor of goals
-		# else:
-		# 	distances = self.compute_distance_in_goal_space(achieved_goal, desired_goal)
-		# 	distances_mask = (distances <= self.width_success).astype(np.float32)
-		#
-		# 	rewards = distances_mask*self.max_reward
-		#
-		# 	return rewards
-
 		else:
 			distances = self.compute_distance_in_goal_space(achieved_goal, desired_goal)
 			distances_mask = (distances <= self.width_success).astype(np.float32)
 
-			rewards = (distances_mask - 1.)
+			rewards = distances_mask*self.max_reward
 
 			return rewards
 
-
-	# def step(self, action) :
-	# 	"""
-	# 	step of the environment
-	#
-	# 	3 cases:
-	# 		- target reached
-	# 		- time limit
-	# 		- else
-	# 	"""
-	#
-	# 	state = self.get_state()
-	#
-	# 	## enable frame skipping
-	# 	for i in range(self.frame_skip):
-	# 		new_state, reward, done, info = self._step(action)
-	# 		new_inner_state = new_state.copy()
-	#
-	# 	self.traj.append(new_state)
-	#
-	# 	## walls kill or not?
-	# 	# done = not info["valid_action"]
-	# 	done = False
-	#
-	# 	self.rollout_steps += 1
-	#
-	# 	dst = np.linalg.norm(self.project_to_goal_space(new_state) - self.goal)
-	# 	info = {'target_reached': dst<= self.width_success}
-	# 	self.successes.append(info["target_reached"])
-	#
-	# 	info['goal_indx'] = copy.deepcopy(self.skill_manager.indx_goal)
-	# 	info['goal'] = copy.deepcopy(self.goal)
-	#
-	# 	### Case 1 - target reached
-	# 	if info['target_reached']: # achieved goal
-	#
-	# 		self.target_reached = True
-	#
-	# 		self.skill_manager.add_success(self.skill_manager.indx_goal)
-	#
-	# 		if self.skill_manager.skipping: ## stop skipping if overshooting
-	# 			self.skill_manager.skipping = False
-	#
-	# 		done = True
-	# 		reward = self.compute_reward(self.project_to_goal_space(new_state), self.goal, info)
-	#
-	# 		prev_goal = self.goal.copy()
-	# 		info['done'] = done
-	# 		info['goal'] = self.goal.copy()
-	# 		info['traj'] = self.traj
-	# 		info['successes'] = self.successes
-	# 		info['skill_length'] = self.max_steps
-	#
-	# 		## time limit for SB3s
-	# 		info["TimeLimit.truncated"] = True
-	#
-	# 		if self.overshoot:
-	# 			info['overshoot_success'] = True
-	#
-	# 		return OrderedDict([
-	# 				("observation", new_state.copy()), ## TODO: what's the actual state?
-	# 				("achieved_goal", self.project_to_goal_space(new_state).copy()),
-	# 				("desired_goal", prev_goal)]), reward, done, info
-	#
-	# 	## Case 2 - Time limit
-	# 	elif self.rollout_steps >= self.max_steps:
-	#
-	# 		self.target_reached = False
-	#
-	# 		## add failure to skill results
-	# 		self.skill_manager.add_failure(self.skill_manager.indx_goal)
-	#
-	# 		reward = self.compute_reward(self.project_to_goal_space(new_state), self.goal, info)
-	#
-	# 		done = True
-	# 		prev_goal = self.goal.copy()
-	# 		info['done'] = done
-	# 		info['goal'] = self.goal.copy()
-	# 		info['traj'] = self.traj
-	# 		info['successes'] = self.successes
-	# 		info['skill_length'] = self.max_steps
-	#
-	# 		## time limit for SB3s
-	# 		info["TimeLimit.truncated"] = True
-	#
-	#
-	# 		return OrderedDict([
-	# 				("observation", new_state.copy()),
-	# 				("achieved_goal", self.project_to_goal_space(new_state).copy()),
-	# 				("desired_goal", prev_goal)]), reward, done, info
-	#
-	# 	else:
-	# 		if done:
-	# 			info['traj'] = self.traj
-	# 			info['successes'] = self.successes
-	# 			info['goal'] = self.goal.copy()
-	#
-	# 		self.target_reached = False
-	#
-	# 		reward = self.compute_reward(self.project_to_goal_space(new_state), self.goal, info)
-	#
-	# 		info['done'] = done
-	# 		return OrderedDict([
-	# 				("observation", new_state.copy()),
-	# 				("achieved_goal", self.project_to_goal_space(new_state).copy()),
-	# 				("desired_goal", self.goal.copy()),]), reward, done, info
 
 	def step(self, action) :
 		"""
@@ -263,7 +144,6 @@ class DubinsMazeEnvGCPHERSB3(DubinsMazeEnv):
 			- time limit
 			- else
 		"""
-
 		state = self.get_state()
 
 		## enable frame skipping
@@ -281,7 +161,6 @@ class DubinsMazeEnvGCPHERSB3(DubinsMazeEnv):
 
 		dst = np.linalg.norm(self.project_to_goal_space(new_state) - self.goal)
 		info = {'target_reached': dst<= self.width_success}
-		self.successes.append(info["target_reached"])
 
 		info['goal_indx'] = copy.deepcopy(self.skill_manager.indx_goal)
 		info['goal'] = copy.deepcopy(self.goal)
@@ -303,7 +182,6 @@ class DubinsMazeEnvGCPHERSB3(DubinsMazeEnv):
 			info['done'] = done
 			info['goal'] = self.goal.copy()
 			info['traj'] = self.traj
-			info['successes'] = self.successes
 
 			if self.overshoot:
 				info['overshoot_success'] = True
@@ -328,10 +206,9 @@ class DubinsMazeEnvGCPHERSB3(DubinsMazeEnv):
 			info['done'] = done
 			info['goal'] = self.goal.copy()
 			info['traj'] = self.traj
-			info['successes'] = self.successes
 
 			## time limit for SB3s
-			info["TimeLimit.truncated"] = True
+			#info["TimeLimit.truncated"] = True
 
 
 			return OrderedDict([
@@ -342,7 +219,6 @@ class DubinsMazeEnvGCPHERSB3(DubinsMazeEnv):
 		else:
 			if done:
 				info['traj'] = self.traj
-				info['successes'] = self.successes
 				info['goal'] = self.goal.copy()
 
 			self.target_reached = False
@@ -457,7 +333,6 @@ class DubinsMazeEnvGCPHERSB3(DubinsMazeEnv):
 		"""
 		## Case 1 - success -> automatically try to overshoot
 		if self.target_reached and self.do_overshoot:
-			print("\n\nYOLO")
 			prev_goal = self.goal.copy()
 			self.subgoal = self.goal.copy()
 			skill_avail = self.next_skill()
@@ -497,7 +372,6 @@ class DubinsMazeEnvGCPHERSB3(DubinsMazeEnv):
 
 			self.rollout_steps = 0
 			self.traj = []
-			self.successes = []
 			state = self.get_state()
 			self.traj.append(state)
 

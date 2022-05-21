@@ -267,12 +267,25 @@ class SAC(OffPolicyAlgorithm):
 			# Sample replay buffer
 			replay_data, infos =  self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 
-			## R \in {0,1}
-			diff_reward_done = replay_data.dones - replay_data.rewards/self.max_reward
+			# ## R \in {0,1}
+			# diff_reward_done = replay_data.dones - replay_data.rewards/self.max_reward
+			# dones = copy.deepcopy(replay_data.dones)
+			# # dones = copy.deepcopy(replay_data.rewards)
+			#
+			# ## add dones for relabelled transitions
+			# missing_dones = (diff_reward_done < 0).int()
+			#
+			# dones[:] = dones[:] + missing_dones[:]
+			# assert (dones[:] <= 1).all()
+			# assert (dones[:] >= 0).all()
+
+			## R \in {-1,0}
+			diff_reward_done = replay_data.dones + replay_data.rewards/self.max_reward
 			dones = copy.deepcopy(replay_data.dones)
+			# dones = copy.deepcopy(replay_data.rewards)
 
 			## add dones for relabelled transitions
-			missing_dones = (diff_reward_done < 0).int()
+			missing_dones = (diff_reward_done == 0).int()
 
 			dones[:] = dones[:] + missing_dones[:]
 			assert (dones[:] <= 1).all()
@@ -572,15 +585,22 @@ class SAC(OffPolicyAlgorithm):
 		## last goal should not look for overshoot success
 		goal_mask = np.array(overshoot_goal)
 
-		## no bonus for relabelled transitions (except if relabelled desired goal close to actual desired goal?)
-		next_observations["observation"] = next_observations["observation"].cpu()
-		next_observations["achieved_goal"] = next_observations["achieved_goal"].cpu()
-		next_observations["desired_goal"] = next_observations["desired_goal"].cpu()
-		next_observations = self._vec_normalize_env.unnormalize_obs(next_observations)
-		relabelling_mask = (th.linalg.norm(next_observations["desired_goal"][:] - th.FloatTensor(true_desired_goals)[:], axis=1) < 0.01).float().reshape(rewards.shape)
 
+		observations = copy.deepcopy(replay_data.observations)
+		# print("observations['desired_goal'] = ", observations["desired_goal"][:10])
+		# print("next_observations['desired_goal'] = ", next_observations["desired_goal"][:10])
+
+		## no bonus for relabelled transitions (except if relabelled desired goal close to actual desired goal?)
+		observations["observation"] = observations["observation"].cpu()
+		observations["achieved_goal"] = observations["achieved_goal"].cpu()
+		observations["desired_goal"] = observations["desired_goal"].cpu()
+		observations = self._vec_normalize_env.unnormalize_obs(next_observations)
+		relabelling_mask = (th.linalg.norm(observations["desired_goal"][:] - th.FloatTensor(true_desired_goals)[:], axis=1) < 0.01).float().reshape(rewards.shape)
+
+		positive_mask = (th.tanh(next_values - base_next_values) > 0.).float()
 		# Compute reward bonus by successive application of reward and total dist masks
 		reward_bonus = (1 + th.tanh(next_values - base_next_values)) * success_mask.float() * relabelling_mask.to(self.device) * th.from_numpy(goal_mask).float().to(self.device)
+		# reward_bonus = (th.tanh(next_values - base_next_values) * positive_mask) * success_mask.float() * relabelling_mask.to(self.device) * th.from_numpy(goal_mask).float().to(self.device)
 
 		return rewards + reward_bonus.float()
 
