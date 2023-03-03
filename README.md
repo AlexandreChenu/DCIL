@@ -1,5 +1,11 @@
 # Divide & Conquer Imitation Algorithm 
 
+> 🚧 
+>
+> This code is not maintained. 
+> Please refer to https://github.com/AlexandreChenu/DCIL_I_XPAG for a new version of the code. 
+> Please, also consider using https://github.com/AlexandreChenu/DCIL_XPAG for a working version of DCIL-II, an improved version of DCIL. 
+
 
 ### Requirements
 
