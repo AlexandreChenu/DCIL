@@ -1,4 +1,4 @@
-# Divide & Conquer Imitation Algorithm 
+# Divide & Conquer Imitation Learning Algorithm 
 
 > 🚧 
 >
